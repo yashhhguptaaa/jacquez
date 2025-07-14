@@ -6,10 +6,9 @@ import { XCircle, CheckCircle2, Smile, MoreHorizontal } from "lucide-react";
 export function GithubCommentDemo() {
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-lg">
-      <div className="p-4 space-y-4">
-        {/* User Comment */}
+      <div className="px-4 space-y-4">
         <div className="flex gap-3">
-          <Avatar>
+          <Avatar className="bg-gray-100 dark:bg-gray-800">
             <AvatarImage
               src="/placeholder.svg?width=40&height=40"
               alt="@slavingia"
@@ -45,7 +44,7 @@ export function GithubCommentDemo() {
 
         {/* Jacquez Bot Comment */}
         <div className="flex gap-3">
-          <Avatar>
+          <Avatar className="bg-gray-100 dark:bg-gray-800">
             <AvatarImage
               src="/placeholder.svg?width=40&height=40"
               alt="@jacquez-bot"
