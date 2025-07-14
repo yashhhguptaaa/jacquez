@@ -85,12 +85,15 @@ If the submission appears to follow the guidelines well:
 
 If the submission appears to be missing some requirements from the guidelines:
 - Thank them for their contribution
-- Gently remind them about the missing requirements based on the guidelines
-- Explain why following the guidelines is important
-- Provide clear next steps
+- Be SPECIFIC about what's missing (e.g., "I noticed this ${submissionType} is missing screenshots", "This appears to be missing a description of the problem", "I don't see any before/after examples", "The issue template sections aren't filled out")
+- Quote or reference the specific guideline requirements that aren't met
+- Explain why those specific requirements help reviewers
+- Provide clear, actionable next steps
 - Maintain an encouraging tone
 
-Keep the response concise but warm.`;
+IMPORTANT: Be specific about what's missing rather than giving vague feedback. If you can't identify specific missing requirements, just provide encouragement.
+
+Keep the response concise but specific.`;
 
     const response = await anthropic.messages.create({
       model: "claude-3-5-sonnet-20241022",
@@ -104,7 +107,7 @@ Keep the response concise but warm.`;
     return response.content[0].text;
   } catch (error) {
     console.error('Error generating AI response:', error);
-    return `Thanks for your ${submissionType}! 😊 I noticed it might be missing some requirements from our contributing guidelines. Could you please review the guidelines and add any missing documentation? This helps reviewers understand your changes better. Thanks!`;
+    return `Thanks for your ${submissionType}! 😊 I'd like to help ensure this follows our contributing guidelines, but I'm having trouble analyzing it right now. Could you please review our contributing guidelines and make sure you've included all required information? This helps reviewers understand your changes better. Thanks!`;
   }
 }
 
