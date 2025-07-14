@@ -1,0 +1,29 @@
+{
+  "name": "jacquez",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/antiwork/jacquez.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/antiwork/jacquez/issues"
+  },
+  "homepage": "https://github.com/antiwork/jacquez#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.56.0",
+    "dotenv": "^17.2.0",
+    "octokit": "^5.0.3",
+    "smee-client": "^4.3.1"
+  }
+}
