@@ -1,30 +1,16 @@
+'use client';
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Github } from "lucide-react";
 import { GithubCommentDemo } from "@/components/github-comment-demo";
-import { AuthButton } from "@/components/auth-button";
+import { useAuth } from "@/lib/auth";
 
 export default function JacquezLandingPage() {
+  const { user, isAuthenticated } = useAuth();
+
   return (
     <div className="flex flex-col min-h-dvh bg-background text-foreground">
-      <header className="w-full border-b">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-          <div className="flex items-center gap-2">
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 32 32"
-              fill="none"
-              aria-hidden="true"
-              className="inline-block"
-            >
-              <polygon points="4,28 28,28 28,4" fill="currentColor" />
-            </svg>
-            <span className="text-xl font-bold">Jacquez</span>
-          </div>
-          <AuthButton />
-        </div>
-      </header>
       <main className="flex-1 flex items-center">
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
@@ -53,20 +39,35 @@ export default function JacquezLandingPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-black text-white hover:bg-black/90"
-                >
-                  <Link
-                    href="https://github.com/apps/jacquez"
-                    target="_blank"
-                    prefetch={false}
+                {isAuthenticated ? (
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-black text-white hover:bg-black/90"
                   >
-                    <Github className="mr-2 h-5 w-5" /> Add to a GitHub
-                    repository
-                  </Link>
-                </Button>
+                    <Link
+                      href="https://github.com/apps/jacquez"
+                      target="_blank"
+                      prefetch={false}
+                    >
+                      <Github className="mr-2 h-5 w-5" /> Add to a GitHub
+                      repository
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-black text-white hover:bg-black/90"
+                  >
+                    <Link
+                      href="/api/auth/github"
+                      prefetch={false}
+                    >
+                      <Github className="mr-2 h-5 w-5" /> Sign in with GitHub
+                    </Link>
+                  </Button>
+                )}
               </div>
             </div>
             <div className="flex items-center justify-center">
