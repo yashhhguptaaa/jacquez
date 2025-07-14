@@ -1,8 +1,7 @@
 import dotenv from "dotenv";
-import {App} from "octokit";
-import {createNodeMiddleware} from "@octokit/webhooks";
+import { App } from "octokit";
+import { createNodeMiddleware } from "@octokit/webhooks";
 import http from "http";
-import fs from "fs";
 import Anthropic from "@anthropic-ai/sdk";
 
 dotenv.config();
@@ -10,62 +9,121 @@ dotenv.config();
 // Get credentials from environment variables
 const appId = process.env.APP_ID;
 const webhookSecret = process.env.WEBHOOK_SECRET;
-const privateKeyPath = process.env.PRIVATE_KEY_PATH;
-
-// Read private key from file
-const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+const privateKey = process.env.PRIVATE_KEY;
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// Configuration
+const config = {
+  maxTokens: parseInt(process.env.MAX_TOKENS) || 300,
+  cacheTimeout: parseInt(process.env.CACHE_TIMEOUT) || 300000, // 5 minutes
+  minCommentLength: parseInt(process.env.MIN_COMMENT_LENGTH) || 3,
+  enableDetailedLogging: process.env.ENABLE_DETAILED_LOGGING === 'true',
+  enableCaching: process.env.ENABLE_CACHING !== 'false',
+  aiModel: process.env.AI_MODEL || 'claude-3-5-sonnet-20241022',
+};
+
+// In-memory cache for contributing guidelines
+const cache = new Map();
+
+// Logging utility
+function log(level, message, data = null) {
+  const timestamp = new Date().toISOString();
+  const logEntry = {
+    timestamp,
+    level,
+    message,
+    ...(data && { data }),
+  };
+  
+  if (config.enableDetailedLogging || level === 'ERROR') {
+    console.log(`[${timestamp}] ${level}: ${message}`, data ? JSON.stringify(data, null, 2) : '');
+  } else {
+    console.log(`[${timestamp}] ${level}: ${message}`);
+  }
+}
+
 // Create GitHub App instance
 const app = new App({
   appId: appId,
   privateKey: privateKey,
   webhooks: {
-    secret: webhookSecret
-  }
+    secret: webhookSecret,
+  },
 });
 
-// Helper function to load contributing.md from repository
+// Helper function to load contributing.md from repository with caching
 async function loadContributingGuidelines(octokit, owner, repo) {
-  try {
-    const response = await octokit.request("GET /repos/{owner}/{repo}/contents/{path}", {
-      owner: owner,
-      repo: repo,
-      path: "CONTRIBUTING.md"
-    });
-
-    if (response.data.content) {
-      return Buffer.from(response.data.content, 'base64').toString('utf-8');
-    }
-  } catch (error) {
-    // Try alternative paths
-    const altPaths = ["contributing.md", ".github/CONTRIBUTING.md", "docs/CONTRIBUTING.md"];
-    for (const path of altPaths) {
-      try {
-        const response = await octokit.request("GET /repos/{owner}/{repo}/contents/{path}", {
-          owner: owner,
-          repo: repo,
-          path: path
-        });
-        if (response.data.content) {
-          return Buffer.from(response.data.content, 'base64').toString('utf-8');
-        }
-      } catch (e) {
-        // Continue to next path
-      }
+  const cacheKey = `${owner}/${repo}`;
+  
+  // Check cache first
+  if (config.enableCaching && cache.has(cacheKey)) {
+    const cached = cache.get(cacheKey);
+    if (Date.now() - cached.timestamp < config.cacheTimeout) {
+      log('INFO', `Contributing guidelines loaded from cache for ${cacheKey}`);
+      return cached.content;
+    } else {
+      cache.delete(cacheKey); // Remove expired cache
     }
   }
+
+  log('INFO', `Loading contributing guidelines for ${cacheKey}`);
+  
+  const altPaths = [
+    "CONTRIBUTING.md",
+    "contributing.md", 
+    ".github/CONTRIBUTING.md",
+    "docs/CONTRIBUTING.md",
+  ];
+
+  for (const path of altPaths) {
+    try {
+      const response = await octokit.request(
+        "GET /repos/{owner}/{repo}/contents/{path}",
+        {
+          owner: owner,
+          repo: repo,
+          path: path,
+        }
+      );
+      
+      if (response.data.content) {
+        const content = Buffer.from(response.data.content, "base64").toString("utf-8");
+        
+        // Cache the result
+        if (config.enableCaching) {
+          cache.set(cacheKey, {
+            content,
+            timestamp: Date.now(),
+          });
+        }
+        
+        log('INFO', `Contributing guidelines found at ${path} for ${cacheKey}`);
+        return content;
+      }
+    } catch (error) {
+      log('DEBUG', `Failed to load contributing guidelines from ${path}`, { error: error.message });
+      // Continue to next path
+    }
+  }
+  
+  log('WARN', `No contributing guidelines found for ${cacheKey}`);
   return null;
 }
 
-
 // Helper function to generate friendly response using Claude
-async function generateFriendlyResponse(contributingContent, submissionContent, submissionType) {
+async function generateFriendlyResponse(
+  contributingContent,
+  submissionContent,
+  submissionType,
+  repoInfo = null
+) {
   try {
+    log('INFO', `Generating AI response for ${submissionType}`);
+    
     const prompt = `You are a friendly GitHub bot helping contributors follow project guidelines.
 
 Contributing guidelines:
@@ -96,143 +154,254 @@ IMPORTANT: Be specific about what's missing rather than giving vague feedback. I
 Keep the response concise but specific.`;
 
     const response = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 300,
-      messages: [{
-        role: "user",
-        content: prompt
-      }]
+      model: config.aiModel,
+      max_tokens: config.maxTokens,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
     });
 
-    return response.content[0].text;
+    const aiResponse = response.content[0].text;
+    log('INFO', `AI response generated successfully`, { 
+      length: aiResponse.length,
+      submissionType,
+      repoInfo 
+    });
+    
+    return aiResponse;
   } catch (error) {
-    console.error('Error generating AI response:', error);
+    log('ERROR', `Error generating AI response for ${submissionType}`, { 
+      error: error.message,
+      stack: error.stack,
+      repoInfo 
+    });
+    
+    // Return a helpful fallback message
     return `Thanks for your ${submissionType}! 😊 I'd like to help ensure this follows our contributing guidelines, but I'm having trouble analyzing it right now. Could you please review our contributing guidelines and make sure you've included all required information? This helps reviewers understand your changes better. Thanks!`;
   }
 }
 
 // Handle pull request opened events
-async function handlePullRequestOpened({octokit, payload}) {
-  console.log(`Pull request opened: ${payload.pull_request.html_url}`);
-
+async function handlePullRequestOpened({ octokit, payload }) {
   const owner = payload.repository.owner.login;
   const repo = payload.repository.name;
   const prNumber = payload.pull_request.number;
-  const prBody = payload.pull_request.body || '';
+  const prBody = payload.pull_request.body || "";
+  const repoInfo = { owner, repo, prNumber };
 
-  // Load contributing guidelines
-  const contributingContent = await loadContributingGuidelines(octokit, owner, repo);
+  log('INFO', `Pull request opened`, { 
+    url: payload.pull_request.html_url,
+    author: payload.pull_request.user.login,
+    ...repoInfo 
+  });
 
-  if (contributingContent) {
-    // Generate friendly response using Claude
-    const response = await generateFriendlyResponse(contributingContent, prBody, 'pull request');
+  try {
+    // Load contributing guidelines
+    const contributingContent = await loadContributingGuidelines(
+      octokit,
+      owner,
+      repo
+    );
 
-    await octokit.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", {
-      owner: owner,
-      repo: repo,
-      issue_number: prNumber,
-      body: response
-    });
-  } else {
-    // No contributing guidelines found, send generic welcome
-    await octokit.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", {
-      owner: owner,
-      repo: repo,
-      issue_number: prNumber,
-      body: "Hello! Thanks for opening this pull request. 🤖"
+    if (contributingContent) {
+      // Generate friendly response using Claude
+      const response = await generateFriendlyResponse(
+        contributingContent,
+        prBody,
+        "pull request",
+        repoInfo
+      );
+
+      await octokit.request(
+        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+        {
+          owner: owner,
+          repo: repo,
+          issue_number: prNumber,
+          body: response,
+        }
+      );
+      
+      log('INFO', `Comment posted successfully for PR`, repoInfo);
+    } else {
+      // No contributing guidelines found, send generic welcome
+      await octokit.request(
+        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+        {
+          owner: owner,
+          repo: repo,
+          issue_number: prNumber,
+          body: "Hello! Thanks for opening this pull request. 🤖",
+        }
+      );
+      
+      log('INFO', `Generic welcome comment posted for PR`, repoInfo);
+    }
+  } catch (error) {
+    log('ERROR', `Error handling pull request opened event`, { 
+      error: error.message,
+      stack: error.stack,
+      ...repoInfo 
     });
   }
 }
 
 // Handle pull request closed events
-async function handlePullRequestClosed({octokit, payload}) {
-  console.log(`Pull request closed: ${payload.pull_request.html_url}`);
+async function handlePullRequestClosed({ octokit, payload }) {
+  const owner = payload.repository.owner.login;
+  const repo = payload.repository.name;
+  const prNumber = payload.pull_request.number;
+  const repoInfo = { owner, repo, prNumber };
+
+  log('INFO', `Pull request closed`, {
+    url: payload.pull_request.html_url,
+    merged: payload.pull_request.merged,
+    author: payload.pull_request.user.login,
+    ...repoInfo
+  });
 
   if (payload.pull_request.merged) {
-    console.log("Pull request was merged!");
+    log('INFO', "Pull request was merged", repoInfo);
   } else {
-    console.log("Pull request was closed without merging.");
+    log('INFO', "Pull request was closed without merging", repoInfo);
   }
 }
 
 // Handle issues opened events
-async function handleIssueOpened({octokit, payload}) {
-  console.log(`Issue opened: ${payload.issue.html_url}`);
-
+async function handleIssueOpened({ octokit, payload }) {
   const owner = payload.repository.owner.login;
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
-  const issueBody = payload.issue.body || '';
+  const issueBody = payload.issue.body || "";
+  const repoInfo = { owner, repo, issueNumber };
 
-  // Load contributing guidelines
-  const contributingContent = await loadContributingGuidelines(octokit, owner, repo);
+  log('INFO', `Issue opened`, {
+    url: payload.issue.html_url,
+    author: payload.issue.user.login,
+    title: payload.issue.title,
+    ...repoInfo
+  });
 
-  if (contributingContent) {
-    // Generate friendly response using Claude
-    const response = await generateFriendlyResponse(contributingContent, issueBody, 'issue');
+  try {
+    // Load contributing guidelines
+    const contributingContent = await loadContributingGuidelines(
+      octokit,
+      owner,
+      repo
+    );
 
-    await octokit.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", {
-      owner: owner,
-      repo: repo,
-      issue_number: issueNumber,
-      body: response
-    });
-  } else {
-    // No contributing guidelines found, send generic welcome
-    await octokit.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", {
-      owner: owner,
-      repo: repo,
-      issue_number: issueNumber,
-      body: "Hello! Thanks for opening this issue. We'll take a look at it soon. 🤖"
+    if (contributingContent) {
+      // Generate friendly response using Claude
+      const response = await generateFriendlyResponse(
+        contributingContent,
+        issueBody,
+        "issue",
+        repoInfo
+      );
+
+      await octokit.request(
+        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+        {
+          owner: owner,
+          repo: repo,
+          issue_number: issueNumber,
+          body: response,
+        }
+      );
+      
+      log('INFO', `Comment posted successfully for issue`, repoInfo);
+    } else {
+      // No contributing guidelines found, send generic welcome
+      await octokit.request(
+        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+        {
+          owner: owner,
+          repo: repo,
+          issue_number: issueNumber,
+          body: "Hello! Thanks for opening this issue. We'll take a look at it soon. 🤖",
+        }
+      );
+      
+      log('INFO', `Generic welcome comment posted for issue`, repoInfo);
+    }
+  } catch (error) {
+    log('ERROR', `Error handling issue opened event`, { 
+      error: error.message,
+      stack: error.stack,
+      ...repoInfo 
     });
   }
 }
 
 // Handle issue comment events
-async function handleIssueCommentCreated({octokit, payload}) {
-  console.log(`Issue comment created: ${payload.comment.html_url}`);
-  console.log(`Comment body: "${payload.comment.body}"`);
-  console.log(`Comment author: ${payload.comment.user.login} (type: ${payload.comment.user.type})`);
-
+async function handleIssueCommentCreated({ octokit, payload }) {
   const owner = payload.repository.owner.login;
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
-  const commentBody = payload.comment.body || '';
+  const commentBody = payload.comment.body || "";
+  const repoInfo = { owner, repo, issueNumber };
+
+  log('INFO', `Issue comment created`, {
+    url: payload.comment.html_url,
+    author: payload.comment.user.login,
+    userType: payload.comment.user.type,
+    commentLength: commentBody.length,
+    ...repoInfo
+  });
 
   // Skip if comment is from the bot itself
-  if (payload.comment.user.type === 'Bot') {
-    console.log('Skipping bot comment');
+  if (payload.comment.user.type === "Bot") {
+    log('INFO', "Skipping bot comment", repoInfo);
     return;
   }
 
-  // Load contributing guidelines
-  const contributingContent = await loadContributingGuidelines(octokit, owner, repo);
-  console.log(`Contributing guidelines loaded: ${contributingContent ? 'YES' : 'NO'}`);
+  try {
+    // Load contributing guidelines
+    const contributingContent = await loadContributingGuidelines(
+      octokit,
+      owner,
+      repo
+    );
 
-  if (contributingContent) {
-    // For debugging, respond to any comment that's not too short
-    if (commentBody.length > 3) {
-      console.log('Generating response for comment');
-      try {
+    if (contributingContent) {
+      // Check if comment meets minimum length requirement
+      if (commentBody.length > config.minCommentLength) {
+        log('INFO', "Generating response for comment", repoInfo);
+        
         // Generate response using Claude to check against guidelines
-        const response = await generateFriendlyResponse(contributingContent, commentBody, 'comment');
-        console.log(`Generated response: ${response}`);
+        const response = await generateFriendlyResponse(
+          contributingContent,
+          commentBody,
+          "comment",
+          repoInfo
+        );
 
-        await octokit.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", {
-          owner: owner,
-          repo: repo,
-          issue_number: issueNumber,
-          body: response
-        });
-        console.log('Comment posted successfully');
-      } catch (error) {
-        console.error('Error posting comment:', error);
+        await octokit.request(
+          "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+          {
+            owner: owner,
+            repo: repo,
+            issue_number: issueNumber,
+            body: response,
+          }
+        );
+        
+        log('INFO', "Comment posted successfully", repoInfo);
+      } else {
+        log('INFO', `Comment too short (${commentBody.length} chars), skipping`, repoInfo);
       }
     } else {
-      console.log('Comment too short, skipping');
+      log('INFO', "No contributing guidelines found, skipping comment analysis", repoInfo);
     }
-  } else {
-    console.log('No contributing guidelines found');
+  } catch (error) {
+    log('ERROR', `Error handling issue comment created event`, { 
+      error: error.message,
+      stack: error.stack,
+      ...repoInfo 
+    });
   }
 }
 
@@ -243,7 +412,7 @@ app.webhooks.on("issues.opened", handleIssueOpened);
 app.webhooks.on("issue_comment.created", handleIssueCommentCreated);
 
 // Create middleware to handle webhook events
-const middleware = createNodeMiddleware(app.webhooks, {path: "/webhook"});
+const middleware = createNodeMiddleware(app.webhooks, { path: "/webhook" });
 
 // Create HTTP server
 const server = http.createServer(middleware);
@@ -251,6 +420,14 @@ const server = http.createServer(middleware);
 // Start server
 const port = process.env.PORT || 3000;
 server.listen(port, () => {
-  console.log(`GitHub App server is running on port ${port}`);
-  console.log(`Webhook URL: http://localhost:${port}/webhook`);
+  log('INFO', `GitHub App server is running on port ${port}`);
+  log('INFO', `Webhook URL: http://localhost:${port}/webhook`);
+  log('INFO', `Configuration loaded`, {
+    maxTokens: config.maxTokens,
+    cacheTimeout: config.cacheTimeout,
+    minCommentLength: config.minCommentLength,
+    enableDetailedLogging: config.enableDetailedLogging,
+    enableCaching: config.enableCaching,
+    aiModel: config.aiModel
+  });
 });
