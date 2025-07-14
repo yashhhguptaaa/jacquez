@@ -109,7 +109,7 @@ async function generateFriendlyResponse(
   try {
     log('INFO', `Generating AI response for ${submissionType}`);
     
-    const prompt = `You are a conservative GitHub bot that helps contributors follow project guidelines. You should ONLY comment when there are clear, obvious violations of the contributing guidelines.
+    const prompt = `You are a friendly GitHub bot helping contributors follow project guidelines.
 
 Contributing guidelines:
 ${contributingContent}
@@ -118,32 +118,25 @@ Submission type: ${submissionType}
 Submission content:
 ${submissionContent}
 
-Analyze the submission against the contributing guidelines. You should ONLY provide a response if there are clear, obvious violations of the guidelines that would prevent proper review or processing.
+Analyze the submission against the contributing guidelines and provide an appropriate response:
 
-CRITICAL: Only comment if you can identify SPECIFIC, CLEAR violations such as:
-- Missing required template sections that are explicitly mentioned in guidelines
-- Missing required information that is clearly stated as mandatory
-- Clear format violations (e.g., not using required issue templates)
-- Missing required screenshots/documentation when explicitly required
-- Obviously incomplete submissions that lack essential information
+If the submission appears to follow the guidelines well:
+- Thank them for their contribution
+- Acknowledge what they did well
+- Provide encouraging feedback
+- Welcome them to the project
 
-DO NOT comment if:
-- The submission mostly follows guidelines with minor omissions
-- You're unsure whether something is truly required
-- The guidelines are vague or open to interpretation
-- The submission appears to be a reasonable attempt at following guidelines
+If the submission appears to be missing some requirements from the guidelines:
+- Thank them for their contribution
+- Be SPECIFIC about what's missing (e.g., "I noticed this ${submissionType} is missing screenshots", "This appears to be missing a description of the problem", "I don't see any before/after examples", "The issue template sections aren't filled out")
+- Quote or reference the specific guideline requirements that aren't met
+- Explain why those specific requirements help reviewers
+- Provide clear, actionable next steps
+- Maintain an encouraging tone
 
-If you determine there ARE clear violations, provide a response that:
-- Thanks them for their contribution
-- Is SPECIFIC about what's clearly missing or violating guidelines
-- Quotes the exact guideline requirements that aren't met
-- Explains why those requirements are necessary
-- Provides clear, actionable next steps
-- Maintains an encouraging tone
+IMPORTANT: Be specific about what's missing rather than giving vague feedback. If you can't identify specific missing requirements, just provide encouragement.
 
-If there are no clear violations, respond with: "NO_COMMENT_NEEDED"
-
-Keep responses concise and only comment on clear violations.`;
+Keep the response concise but specific.`;
 
     const response = await anthropic.messages.create({
       model: config.aiModel,
@@ -207,22 +200,17 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
         repoInfo
       );
 
-      // Only post comment if there are clear violations
-      if (response.trim() !== "NO_COMMENT_NEEDED") {
-        await octokit.request(
-          "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
-          {
-            owner: owner,
-            repo: repo,
-            issue_number: prNumber,
-            body: response,
-          }
-        );
-        
-        log('INFO', `Comment posted successfully for PR`, repoInfo);
-      } else {
-        log('INFO', `No clear violations found, skipping comment for PR`, repoInfo);
-      }
+      await octokit.request(
+        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+        {
+          owner: owner,
+          repo: repo,
+          issue_number: prNumber,
+          body: response,
+        }
+      );
+      
+      log('INFO', `Comment posted successfully for PR`, repoInfo);
     } else {
       // No contributing guidelines found, send generic welcome
       await octokit.request(
@@ -278,22 +266,17 @@ async function handleIssueOpened({ octokit, payload }: any) {
         repoInfo
       );
 
-      // Only post comment if there are clear violations
-      if (response.trim() !== "NO_COMMENT_NEEDED") {
-        await octokit.request(
-          "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
-          {
-            owner: owner,
-            repo: repo,
-            issue_number: issueNumber,
-            body: response,
-          }
-        );
-        
-        log('INFO', `Comment posted successfully for issue`, repoInfo);
-      } else {
-        log('INFO', `No clear violations found, skipping comment for issue`, repoInfo);
-      }
+      await octokit.request(
+        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+        {
+          owner: owner,
+          repo: repo,
+          issue_number: issueNumber,
+          body: response,
+        }
+      );
+      
+      log('INFO', `Comment posted successfully for issue`, repoInfo);
     } else {
       // No contributing guidelines found, send generic welcome
       await octokit.request(
@@ -360,22 +343,17 @@ async function handleIssueCommentCreated({ octokit, payload }: any) {
           repoInfo
         );
 
-        // Only post comment if there are clear violations
-        if (response.trim() !== "NO_COMMENT_NEEDED") {
-          await octokit.request(
-            "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
-            {
-              owner: owner,
-              repo: repo,
-              issue_number: issueNumber,
-              body: response,
-            }
-          );
-          
-          log('INFO', "Comment posted successfully", repoInfo);
-        } else {
-          log('INFO', "No clear violations found, skipping comment", repoInfo);
-        }
+        await octokit.request(
+          "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+          {
+            owner: owner,
+            repo: repo,
+            issue_number: issueNumber,
+            body: response,
+          }
+        );
+        
+        log('INFO', "Comment posted successfully", repoInfo);
       } else {
         log('INFO', `Comment too short (${commentBody.length} chars), skipping`, repoInfo);
       }
