@@ -1,15 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { App } from 'octokit';
-import Anthropic from '@anthropic-ai/sdk';
+import { NextRequest, NextResponse } from "next/server";
+import { App } from "octokit";
+import Anthropic from "@anthropic-ai/sdk";
 
 // Configuration
 const config = {
   maxTokens: parseInt(process.env.MAX_TOKENS!) || 300,
   cacheTimeout: parseInt(process.env.CACHE_TIMEOUT!) || 300000, // 5 minutes
   minCommentLength: parseInt(process.env.MIN_COMMENT_LENGTH!) || 3,
-  enableDetailedLogging: process.env.ENABLE_DETAILED_LOGGING === 'true',
-  enableCaching: process.env.ENABLE_CACHING !== 'false',
-  aiModel: process.env.AI_MODEL || 'claude-3-5-sonnet-20241022',
+  enableDetailedLogging: process.env.ENABLE_DETAILED_LOGGING === "true",
+  enableCaching: process.env.ENABLE_CACHING !== "false",
+  aiModel: process.env.AI_MODEL || "claude-3-5-sonnet-20241022",
 };
 
 // In-memory cache for contributing guidelines
@@ -32,34 +32,41 @@ const app = new App({
 // Logging utility
 function log(level: string, message: string, data: any = null) {
   const timestamp = new Date().toISOString();
-  
-  if (config.enableDetailedLogging || level === 'ERROR') {
-    console.log(`[${timestamp}] ${level}: ${message}`, data ? JSON.stringify(data, null, 2) : '');
+
+  if (config.enableDetailedLogging || level === "ERROR") {
+    console.log(
+      `[${timestamp}] ${level}: ${message}`,
+      data ? JSON.stringify(data, null, 2) : ""
+    );
   } else {
     console.log(`[${timestamp}] ${level}: ${message}`);
   }
 }
 
 // Helper function to load contributing.md from repository with caching
-async function loadContributingGuidelines(octokit: any, owner: string, repo: string): Promise<string | null> {
+async function loadContributingGuidelines(
+  octokit: any,
+  owner: string,
+  repo: string
+): Promise<string | null> {
   const cacheKey = `${owner}/${repo}`;
-  
+
   // Check cache first
   if (config.enableCaching && cache.has(cacheKey)) {
     const cached = cache.get(cacheKey)!;
     if (Date.now() - cached.timestamp < config.cacheTimeout) {
-      log('INFO', `Contributing guidelines loaded from cache for ${cacheKey}`);
+      log("INFO", `Contributing guidelines loaded from cache for ${cacheKey}`);
       return cached.content;
     } else {
       cache.delete(cacheKey); // Remove expired cache
     }
   }
 
-  log('INFO', `Loading contributing guidelines for ${cacheKey}`);
-  
+  log("INFO", `Loading contributing guidelines for ${cacheKey}`);
+
   const altPaths = [
     "CONTRIBUTING.md",
-    "contributing.md", 
+    "contributing.md",
     ".github/CONTRIBUTING.md",
     "docs/CONTRIBUTING.md",
   ];
@@ -74,10 +81,12 @@ async function loadContributingGuidelines(octokit: any, owner: string, repo: str
           path: path,
         }
       );
-      
+
       if (response.data.content) {
-        const content = Buffer.from(response.data.content, "base64").toString("utf-8");
-        
+        const content = Buffer.from(response.data.content, "base64").toString(
+          "utf-8"
+        );
+
         // Cache the result
         if (config.enableCaching) {
           cache.set(cacheKey, {
@@ -85,17 +94,19 @@ async function loadContributingGuidelines(octokit: any, owner: string, repo: str
             timestamp: Date.now(),
           });
         }
-        
-        log('INFO', `Contributing guidelines found at ${path} for ${cacheKey}`);
+
+        log("INFO", `Contributing guidelines found at ${path} for ${cacheKey}`);
         return content;
       }
     } catch (error: any) {
-      log('DEBUG', `Failed to load contributing guidelines from ${path}`, { error: error.message });
+      log("DEBUG", `Failed to load contributing guidelines from ${path}`, {
+        error: error.message,
+      });
       // Continue to next path
     }
   }
-  
-  log('WARN', `No contributing guidelines found for ${cacheKey}`);
+
+  log("WARN", `No contributing guidelines found for ${cacheKey}`);
   return null;
 }
 
@@ -107,8 +118,8 @@ async function generateFriendlyResponse(
   repoInfo: any = null
 ): Promise<string> {
   try {
-    log('INFO', `Generating AI response for ${submissionType}`);
-    
+    log("INFO", `Generating AI response for ${submissionType}`);
+
     const prompt = `You are a conservative GitHub bot that helps contributors follow project guidelines. You should ONLY comment when there are clear, obvious violations of the contributing guidelines.
 
 Contributing guidelines:
@@ -141,7 +152,7 @@ If you determine there ARE clear violations, provide a response that:
 - Provides clear, actionable next steps
 - Maintains an encouraging tone
 
-If there are no clear violations, respond with: "NO_COMMENT_NEEDED"
+If there are no clear violations, respond only with: "NO_COMMENT_NEEDED" and nothing else.
 
 Keep responses concise and only comment on clear violations.`;
 
@@ -156,21 +167,22 @@ Keep responses concise and only comment on clear violations.`;
       ],
     });
 
-    const aiResponse = response.content[0].type === 'text' ? response.content[0].text : '';
-    log('INFO', `AI response generated successfully`, { 
+    const aiResponse =
+      response.content[0].type === "text" ? response.content[0].text : "";
+    log("INFO", `AI response generated successfully`, {
       length: aiResponse.length,
       submissionType,
-      repoInfo 
+      repoInfo,
     });
-    
+
     return aiResponse;
   } catch (error: any) {
-    log('ERROR', `Error generating AI response for ${submissionType}`, { 
+    log("ERROR", `Error generating AI response for ${submissionType}`, {
       error: error.message,
       stack: error.stack,
-      repoInfo 
+      repoInfo,
     });
-    
+
     // Return a helpful fallback message
     return `Thanks for your ${submissionType}! 😊 I'd like to help ensure this follows our contributing guidelines, but I'm having trouble analyzing it right now. Could you please review our contributing guidelines and make sure you've included all required information? This helps reviewers understand your changes better. Thanks!`;
   }
@@ -184,10 +196,10 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
   const prBody = payload.pull_request.body || "";
   const repoInfo = { owner, repo, prNumber };
 
-  log('INFO', `Pull request opened`, { 
+  log("INFO", `Pull request opened`, {
     url: payload.pull_request.html_url,
     author: payload.pull_request.user.login,
-    ...repoInfo 
+    ...repoInfo,
   });
 
   try {
@@ -218,10 +230,14 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
             body: response,
           }
         );
-        
-        log('INFO', `Comment posted successfully for PR`, repoInfo);
+
+        log("INFO", `Comment posted successfully for PR`, repoInfo);
       } else {
-        log('INFO', `No clear violations found, skipping comment for PR`, repoInfo);
+        log(
+          "INFO",
+          `No clear violations found, skipping comment for PR`,
+          repoInfo
+        );
       }
     } else {
       // No contributing guidelines found, send generic welcome
@@ -234,14 +250,14 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
           body: "Hello! Thanks for opening this pull request. 🤖",
         }
       );
-      
-      log('INFO', `Generic welcome comment posted for PR`, repoInfo);
+
+      log("INFO", `Generic welcome comment posted for PR`, repoInfo);
     }
   } catch (error: any) {
-    log('ERROR', `Error handling pull request opened event`, { 
+    log("ERROR", `Error handling pull request opened event`, {
       error: error.message,
       stack: error.stack,
-      ...repoInfo 
+      ...repoInfo,
     });
   }
 }
@@ -254,11 +270,11 @@ async function handleIssueOpened({ octokit, payload }: any) {
   const issueBody = payload.issue.body || "";
   const repoInfo = { owner, repo, issueNumber };
 
-  log('INFO', `Issue opened`, {
+  log("INFO", `Issue opened`, {
     url: payload.issue.html_url,
     author: payload.issue.user.login,
     title: payload.issue.title,
-    ...repoInfo
+    ...repoInfo,
   });
 
   try {
@@ -289,10 +305,14 @@ async function handleIssueOpened({ octokit, payload }: any) {
             body: response,
           }
         );
-        
-        log('INFO', `Comment posted successfully for issue`, repoInfo);
+
+        log("INFO", `Comment posted successfully for issue`, repoInfo);
       } else {
-        log('INFO', `No clear violations found, skipping comment for issue`, repoInfo);
+        log(
+          "INFO",
+          `No clear violations found, skipping comment for issue`,
+          repoInfo
+        );
       }
     } else {
       // No contributing guidelines found, send generic welcome
@@ -305,14 +325,14 @@ async function handleIssueOpened({ octokit, payload }: any) {
           body: "Hello! Thanks for opening this issue. We'll take a look at it soon. 🤖",
         }
       );
-      
-      log('INFO', `Generic welcome comment posted for issue`, repoInfo);
+
+      log("INFO", `Generic welcome comment posted for issue`, repoInfo);
     }
   } catch (error: any) {
-    log('ERROR', `Error handling issue opened event`, { 
+    log("ERROR", `Error handling issue opened event`, {
       error: error.message,
       stack: error.stack,
-      ...repoInfo 
+      ...repoInfo,
     });
   }
 }
@@ -325,17 +345,17 @@ async function handleIssueCommentCreated({ octokit, payload }: any) {
   const commentBody = payload.comment.body || "";
   const repoInfo = { owner, repo, issueNumber };
 
-  log('INFO', `Issue comment created`, {
+  log("INFO", `Issue comment created`, {
     url: payload.comment.html_url,
     author: payload.comment.user.login,
     userType: payload.comment.user.type,
     commentLength: commentBody.length,
-    ...repoInfo
+    ...repoInfo,
   });
 
   // Skip if comment is from the bot itself
   if (payload.comment.user.type === "Bot") {
-    log('INFO', "Skipping bot comment", repoInfo);
+    log("INFO", "Skipping bot comment", repoInfo);
     return;
   }
 
@@ -350,8 +370,8 @@ async function handleIssueCommentCreated({ octokit, payload }: any) {
     if (contributingContent) {
       // Check if comment meets minimum length requirement
       if (commentBody.length > config.minCommentLength) {
-        log('INFO', "Generating response for comment", repoInfo);
-        
+        log("INFO", "Generating response for comment", repoInfo);
+
         // Generate response using Claude to check against guidelines
         const response = await generateFriendlyResponse(
           contributingContent,
@@ -371,22 +391,30 @@ async function handleIssueCommentCreated({ octokit, payload }: any) {
               body: response,
             }
           );
-          
-          log('INFO', "Comment posted successfully", repoInfo);
+
+          log("INFO", "Comment posted successfully", repoInfo);
         } else {
-          log('INFO', "No clear violations found, skipping comment", repoInfo);
+          log("INFO", "No clear violations found, skipping comment", repoInfo);
         }
       } else {
-        log('INFO', `Comment too short (${commentBody.length} chars), skipping`, repoInfo);
+        log(
+          "INFO",
+          `Comment too short (${commentBody.length} chars), skipping`,
+          repoInfo
+        );
       }
     } else {
-      log('INFO', "No contributing guidelines found, skipping comment analysis", repoInfo);
+      log(
+        "INFO",
+        "No contributing guidelines found, skipping comment analysis",
+        repoInfo
+      );
     }
   } catch (error: any) {
-    log('ERROR', `Error handling issue comment created event`, { 
+    log("ERROR", `Error handling issue comment created event`, {
       error: error.message,
       stack: error.stack,
-      ...repoInfo 
+      ...repoInfo,
     });
   }
 }
@@ -399,12 +427,15 @@ app.webhooks.on("issue_comment.created", handleIssueCommentCreated);
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
-    const signature = request.headers.get('x-hub-signature-256');
-    const id = request.headers.get('x-github-delivery');
-    const event = request.headers.get('x-github-event');
+    const signature = request.headers.get("x-hub-signature-256");
+    const id = request.headers.get("x-github-delivery");
+    const event = request.headers.get("x-github-event");
 
     if (!signature || !id || !event) {
-      return NextResponse.json({ error: 'Missing required headers' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required headers" },
+        { status: 400 }
+      );
     }
 
     // Process the webhook with the Octokit App
@@ -417,7 +448,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    log('ERROR', 'Webhook processing failed', { error: error.message, stack: error.stack });
-    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
+    log("ERROR", "Webhook processing failed", {
+      error: error.message,
+      stack: error.stack,
+    });
+    return NextResponse.json(
+      { error: "Webhook processing failed" },
+      { status: 500 }
+    );
   }
 }
