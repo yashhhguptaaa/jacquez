@@ -188,6 +188,8 @@ async function handleIssueOpened({octokit, payload}) {
 // Handle issue comment events
 async function handleIssueCommentCreated({octokit, payload}) {
   console.log(`Issue comment created: ${payload.comment.html_url}`);
+  console.log(`Comment body: "${payload.comment.body}"`);
+  console.log(`Comment author: ${payload.comment.user.login} (type: ${payload.comment.user.type})`);
 
   const owner = payload.repository.owner.login;
   const repo = payload.repository.name;
@@ -196,27 +198,38 @@ async function handleIssueCommentCreated({octokit, payload}) {
 
   // Skip if comment is from the bot itself
   if (payload.comment.user.type === 'Bot') {
+    console.log('Skipping bot comment');
     return;
   }
 
   // Load contributing guidelines
   const contributingContent = await loadContributingGuidelines(octokit, owner, repo);
+  console.log(`Contributing guidelines loaded: ${contributingContent ? 'YES' : 'NO'}`);
 
   if (contributingContent) {
-    // Only respond if comment seems to be providing a solution/contribution
-    const isContribution = /fix|solve|solution|here.*is|try.*this|change.*to/i.test(commentBody);
+    // For debugging, respond to any comment that's not too short
+    if (commentBody.length > 3) {
+      console.log('Generating response for comment');
+      try {
+        // Generate response using Claude to check against guidelines
+        const response = await generateFriendlyResponse(contributingContent, commentBody, 'comment');
+        console.log(`Generated response: ${response}`);
 
-    if (isContribution && commentBody.length > 50) {
-      // Generate friendly response using Claude
-      const response = await generateFriendlyResponse(contributingContent, commentBody, 'comment');
-
-      await octokit.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", {
-        owner: owner,
-        repo: repo,
-        issue_number: issueNumber,
-        body: response
-      });
+        await octokit.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", {
+          owner: owner,
+          repo: repo,
+          issue_number: issueNumber,
+          body: response
+        });
+        console.log('Comment posted successfully');
+      } catch (error) {
+        console.error('Error posting comment:', error);
+      }
+    } else {
+      console.log('Comment too short, skipping');
     }
+  } else {
+    console.log('No contributing guidelines found');
   }
 }
 
