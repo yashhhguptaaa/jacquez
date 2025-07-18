@@ -220,7 +220,7 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
       );
 
       // Only post comment if there are clear violations
-      if (response.trim() !== "NO_COMMENT_NEEDED") {
+      if (!response.includes("NO_COMMENT_NEEDED")) {
         await octokit.request(
           "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
           {
@@ -295,7 +295,7 @@ async function handleIssueOpened({ octokit, payload }: any) {
       );
 
       // Only post comment if there are clear violations
-      if (response.trim() !== "NO_COMMENT_NEEDED") {
+      if (!response.includes("NO_COMMENT_NEEDED")) {
         await octokit.request(
           "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
           {
@@ -381,7 +381,7 @@ async function handleIssueCommentCreated({ octokit, payload }: any) {
         );
 
         // Only post comment if there are clear violations
-        if (response.trim() !== "NO_COMMENT_NEEDED") {
+        if (!response.includes("NO_COMMENT_NEEDED")) {
           await octokit.request(
             "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
             {
