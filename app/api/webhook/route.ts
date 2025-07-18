@@ -116,7 +116,7 @@ async function generateFriendlyResponse(
   submissionContent: string,
   submissionType: string,
   repoInfo: any = null
-): Promise<string> {
+): Promise<{ comment_needed: boolean; comment: string; reasoning: string }> {
   try {
     log("INFO", `Generating AI response for ${submissionType}`);
 
@@ -144,17 +144,20 @@ DO NOT comment if:
 - The guidelines are vague or open to interpretation
 - The submission appears to be a reasonable attempt at following guidelines
 
-If you determine there ARE clear violations, provide a response that:
-- Thanks them for their contribution
-- Is SPECIFIC about what's clearly missing or violating guidelines
-- Quotes the exact guideline requirements that aren't met
-- Explains why those requirements are necessary
-- Provides clear, actionable next steps
-- Maintains an encouraging tone
+Respond with a JSON object containing:
+- comment_needed: boolean (true only if there are clear violations)
+- comment: string (1-2 sentence comment if needed, empty string if not needed)
+- reasoning: string (brief explanation of why comment is or isn't needed)
 
-If there are no clear violations, respond only with: "NO_COMMENT_NEEDED" and nothing else.
+If you determine there ARE clear violations, the comment should:
+- Thank them for their contribution
+- Be SPECIFIC about what's clearly missing or violating guidelines
+- Quote the exact guideline requirements that aren't met
+- Explain why those requirements are necessary
+- Provide clear, actionable next steps
+- Maintain an encouraging tone
 
-Keep responses concise and only comment on clear violations.`;
+Keep comments concise (1-2 sentences) and only comment on clear violations.`;
 
     const response = await anthropic.messages.create({
       model: config.aiModel,
@@ -164,18 +167,46 @@ Keep responses concise and only comment on clear violations.`;
           role: "user",
           content: prompt,
         },
+        {
+          role: "assistant",
+          content: "{",
+        },
       ],
     });
 
     const aiResponse =
       response.content[0].type === "text" ? response.content[0].text : "";
-    log("INFO", `AI response generated successfully`, {
-      length: aiResponse.length,
-      submissionType,
-      repoInfo,
-    });
+    
+    try {
+      const fullJsonResponse = "{" + aiResponse;
+      const parsedResponse = JSON.parse(fullJsonResponse);
+      
+      log("INFO", `AI response generated successfully`, {
+        comment_needed: parsedResponse.comment_needed,
+        submissionType,
+        repoInfo,
+      });
 
-    return aiResponse;
+      return {
+        comment_needed: parsedResponse.comment_needed || false,
+        comment: parsedResponse.comment || "",
+        reasoning: parsedResponse.reasoning || "",
+      };
+    } catch (parseError: any) {
+      log("WARN", `Failed to parse JSON response, falling back to string check`, {
+        parseError: parseError.message,
+        aiResponse: aiResponse.substring(0, 200),
+        submissionType,
+        repoInfo,
+      });
+      
+      const fallbackCommentNeeded = !aiResponse.includes("NO_COMMENT_NEEDED");
+      return {
+        comment_needed: fallbackCommentNeeded,
+        comment: fallbackCommentNeeded ? aiResponse : "",
+        reasoning: fallbackCommentNeeded ? "Fallback to string parsing" : "No comment needed based on string check",
+      };
+    }
   } catch (error: any) {
     log("ERROR", `Error generating AI response for ${submissionType}`, {
       error: error.message,
@@ -183,8 +214,11 @@ Keep responses concise and only comment on clear violations.`;
       repoInfo,
     });
 
-    // Return a helpful fallback message
-    return `Thanks for your ${submissionType}! 😊 I'd like to help ensure this follows our contributing guidelines, but I'm having trouble analyzing it right now. Could you please review our contributing guidelines and make sure you've included all required information? This helps reviewers understand your changes better. Thanks!`;
+    return {
+      comment_needed: true,
+      comment: `Thanks for your ${submissionType}! 😊 I'd like to help ensure this follows our contributing guidelines, but I'm having trouble analyzing it right now. Could you please review our contributing guidelines and make sure you've included all required information? This helps reviewers understand your changes better. Thanks!`,
+      reasoning: "Error occurred during AI analysis, providing fallback message",
+    };
   }
 }
 
@@ -220,23 +254,23 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
       );
 
       // Only post comment if there are clear violations
-      if (!response.includes("NO_COMMENT_NEEDED")) {
+      if (response.comment_needed) {
         await octokit.request(
           "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
           {
             owner: owner,
             repo: repo,
             issue_number: prNumber,
-            body: response,
+            body: response.comment,
           }
         );
 
-        log("INFO", `Comment posted successfully for PR`, repoInfo);
+        log("INFO", `Comment posted successfully for PR`, { ...repoInfo, reasoning: response.reasoning });
       } else {
         log(
           "INFO",
           `No clear violations found, skipping comment for PR`,
-          repoInfo
+          { ...repoInfo, reasoning: response.reasoning }
         );
       }
     } else {
@@ -295,23 +329,23 @@ async function handleIssueOpened({ octokit, payload }: any) {
       );
 
       // Only post comment if there are clear violations
-      if (!response.includes("NO_COMMENT_NEEDED")) {
+      if (response.comment_needed) {
         await octokit.request(
           "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
           {
             owner: owner,
             repo: repo,
             issue_number: issueNumber,
-            body: response,
+            body: response.comment,
           }
         );
 
-        log("INFO", `Comment posted successfully for issue`, repoInfo);
+        log("INFO", `Comment posted successfully for issue`, { ...repoInfo, reasoning: response.reasoning });
       } else {
         log(
           "INFO",
           `No clear violations found, skipping comment for issue`,
-          repoInfo
+          { ...repoInfo, reasoning: response.reasoning }
         );
       }
     } else {
@@ -381,20 +415,20 @@ async function handleIssueCommentCreated({ octokit, payload }: any) {
         );
 
         // Only post comment if there are clear violations
-        if (!response.includes("NO_COMMENT_NEEDED")) {
+        if (response.comment_needed) {
           await octokit.request(
             "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
             {
               owner: owner,
               repo: repo,
               issue_number: issueNumber,
-              body: response,
+              body: response.comment,
             }
           );
 
-          log("INFO", "Comment posted successfully", repoInfo);
+          log("INFO", "Comment posted successfully", { ...repoInfo, reasoning: response.reasoning });
         } else {
-          log("INFO", "No clear violations found, skipping comment", repoInfo);
+          log("INFO", "No clear violations found, skipping comment", { ...repoInfo, reasoning: response.reasoning });
         }
       } else {
         log(
