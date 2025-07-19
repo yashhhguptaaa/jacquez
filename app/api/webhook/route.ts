@@ -200,18 +200,24 @@ Keep comments concise (1-2 sentences) and only comment on clear violations.`;
         reasoning: parsedResponse.reasoning || "",
       };
     } catch (parseError: any) {
-      log("WARN", `Failed to parse JSON response, falling back to string check`, {
+      log("WARN", `Failed to parse JSON response, attempting to extract comment from partial JSON`, {
         parseError: parseError.message,
         aiResponse: aiResponse.substring(0, 200),
         submissionType,
         repoInfo,
       });
       
-      const fallbackCommentNeeded = !aiResponse.includes("NO_COMMENT_NEEDED");
+      let extractedComment = "";
+      const commentMatch = aiResponse.match(/"comment"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/);
+      if (commentMatch) {
+        extractedComment = commentMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+      }
+      
+      const fallbackCommentNeeded = !aiResponse.includes("NO_COMMENT_NEEDED") && extractedComment.length > 0;
       return {
         comment_needed: fallbackCommentNeeded,
-        comment: fallbackCommentNeeded ? aiResponse : "",
-        reasoning: fallbackCommentNeeded ? "Fallback to string parsing" : "No comment needed based on string check",
+        comment: fallbackCommentNeeded ? extractedComment : "",
+        reasoning: fallbackCommentNeeded ? "Extracted comment from partial JSON response" : "No comment needed based on string check",
       };
     }
   } catch (error: any) {
