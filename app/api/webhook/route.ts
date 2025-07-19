@@ -215,9 +215,9 @@ Keep comments concise (1-2 sentences) and only comment on clear violations.`;
     });
 
     return {
-      comment_needed: true,
-      comment: `Thanks for your ${submissionType}! 😊 I'd like to help ensure this follows our contributing guidelines, but I'm having trouble analyzing it right now. Could you please review our contributing guidelines and make sure you've included all required information? This helps reviewers understand your changes better. Thanks!`,
-      reasoning: "Error occurred during AI analysis, providing fallback message",
+      comment_needed: false,
+      comment: "",
+      reasoning: "Error occurred during AI analysis, skipping comment to avoid spam",
     };
   }
 }
