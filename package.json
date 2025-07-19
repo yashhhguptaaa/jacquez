@@ -9,7 +9,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "repository": {
     "type": "git",
@@ -32,6 +34,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.0",
+    "jsonrepair": "^3.13.0",
     "lucide-react": "^0.525.0",
     "next": "^15.3.5",
     "octokit": "^5.0.3",
@@ -42,9 +45,13 @@
     "typescript": "^5.8.3"
   },
   "devDependencies": {
+    "@jest/globals": "^30.0.4",
     "@tailwindcss/postcss": "^4.1.11",
+    "@types/jest": "^30.0.0",
     "autoprefixer": "^10.4.21",
+    "jest": "^30.0.4",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.11"
+    "tailwindcss": "^4.1.11",
+    "ts-jest": "^29.4.0"
   }
 }

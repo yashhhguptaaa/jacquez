@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { App } from "octokit";
 import Anthropic from "@anthropic-ai/sdk";
+import { parseAIResponse } from "../../../utils/jsonParser";
 
 // Configuration
 const config = {
@@ -184,42 +185,15 @@ Keep comments concise (1-2 sentences) and only comment on clear violations.`;
     const aiResponse =
       response.content[0].type === "text" ? response.content[0].text : "";
     
-    try {
-      const fullJsonResponse = "{" + aiResponse;
-      const parsedResponse = JSON.parse(fullJsonResponse);
-      
-      log("INFO", `AI response generated successfully`, {
-        comment_needed: parsedResponse.comment_needed,
-        submissionType,
-        repoInfo,
-      });
+    const result = parseAIResponse(aiResponse);
+    
+    log("INFO", `AI response generated successfully`, {
+      comment_needed: result.comment_needed,
+      submissionType,
+      repoInfo,
+    });
 
-      return {
-        comment_needed: parsedResponse.comment_needed || false,
-        comment: parsedResponse.comment || "",
-        reasoning: parsedResponse.reasoning || "",
-      };
-    } catch (parseError: any) {
-      log("WARN", `Failed to parse JSON response, attempting to extract comment from partial JSON`, {
-        parseError: parseError.message,
-        aiResponse: aiResponse.substring(0, 200),
-        submissionType,
-        repoInfo,
-      });
-      
-      let extractedComment = "";
-      const commentMatch = aiResponse.match(/"comment"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/);
-      if (commentMatch) {
-        extractedComment = commentMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
-      }
-      
-      const fallbackCommentNeeded = !aiResponse.includes("NO_COMMENT_NEEDED") && extractedComment.length > 0;
-      return {
-        comment_needed: fallbackCommentNeeded,
-        comment: fallbackCommentNeeded ? extractedComment : "",
-        reasoning: fallbackCommentNeeded ? "Extracted comment from partial JSON response" : "No comment needed based on string check",
-      };
-    }
+    return result;
   } catch (error: any) {
     log("ERROR", `Error generating AI response for ${submissionType}`, {
       error: error.message,
