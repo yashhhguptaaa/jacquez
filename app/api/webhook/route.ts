@@ -44,6 +44,11 @@ function log(level: string, message: string, data: any = null) {
   }
 }
 
+// Helper function to check if content contains "aside" keyword
+function containsAsideKeyword(content: string): boolean {
+  return content.toLowerCase().includes("aside");
+}
+
 // Helper function to load contributing.md from repository with caching
 async function loadContributingGuidelines(
   octokit: any,
@@ -232,6 +237,11 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
     );
 
     if (contributingContent) {
+      if (containsAsideKeyword(prBody)) {
+        log("INFO", `Skipping PR analysis due to "aside" keyword`, repoInfo);
+        return;
+      }
+
       // Generate response using Claude to check against guidelines
       const response = await generateFriendlyResponse(
         contributingContent,
@@ -307,6 +317,11 @@ async function handleIssueOpened({ octokit, payload }: any) {
     );
 
     if (contributingContent) {
+      if (containsAsideKeyword(issueBody)) {
+        log("INFO", `Skipping issue analysis due to "aside" keyword`, repoInfo);
+        return;
+      }
+
       // Generate response using Claude to check against guidelines
       const response = await generateFriendlyResponse(
         contributingContent,
@@ -391,6 +406,11 @@ async function handleIssueCommentCreated({ octokit, payload }: any) {
     if (contributingContent) {
       // Check if comment meets minimum length requirement
       if (commentBody.length > config.minCommentLength) {
+        if (containsAsideKeyword(commentBody)) {
+          log("INFO", `Skipping comment analysis due to "aside" keyword`, repoInfo);
+          return;
+        }
+
         log("INFO", "Generating response for comment", repoInfo);
 
         // Generate response using Claude to check against guidelines
