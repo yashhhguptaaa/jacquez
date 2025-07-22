@@ -39,9 +39,11 @@ Edit `.env` with your credentials:
 
 ```env
 # GitHub App Configuration
-APP_ID=your_app_id
-WEBHOOK_SECRET=your_webhook_secret
-PRIVATE_KEY_PATH=/path/to/your/private-key.pem
+GH_APP_ID=your_app_id
+GH_WEBHOOK_SECRET=your_webhook_secret
+GH_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
+...your private key content here...
+-----END RSA PRIVATE KEY-----"
 PORT=3000
 
 # Smee.io webhook URL for local development
@@ -64,7 +66,7 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
      - Pull requests
      - Issue comments
 3. Set webhook URL to your Smee.io channel
-4. Download the private key and update `PRIVATE_KEY_PATH` in `.env`
+4. Download the private key and update `GH_PRIVATE_KEY` in `.env`
 
 ### 4. Get API Keys
 

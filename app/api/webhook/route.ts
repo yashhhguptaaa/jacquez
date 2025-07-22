@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { App } from "octokit";
 import Anthropic from "@anthropic-ai/sdk";
+import { parseAIResponse } from "../../../utils/jsonParser";
 
 // Configuration
 const config = {
@@ -22,10 +23,10 @@ const anthropic = new Anthropic({
 
 // Create GitHub App instance
 const app = new App({
-  appId: process.env.APP_ID!,
-  privateKey: process.env.PRIVATE_KEY!,
+  appId: process.env.GH_APP_ID!,
+  privateKey: process.env.GH_PRIVATE_KEY!,
   webhooks: {
-    secret: process.env.WEBHOOK_SECRET!,
+    secret: process.env.GH_WEBHOOK_SECRET!,
   },
 });
 
@@ -189,36 +190,15 @@ Keep comments concise (1-2 sentences) and only comment on clear violations.`;
     const aiResponse =
       response.content[0].type === "text" ? response.content[0].text : "";
     
-    try {
-      const fullJsonResponse = "{" + aiResponse;
-      const parsedResponse = JSON.parse(fullJsonResponse);
-      
-      log("INFO", `AI response generated successfully`, {
-        comment_needed: parsedResponse.comment_needed,
-        submissionType,
-        repoInfo,
-      });
+    const result = parseAIResponse(aiResponse);
+    
+    log("INFO", `AI response generated successfully`, {
+      comment_needed: result.comment_needed,
+      submissionType,
+      repoInfo,
+    });
 
-      return {
-        comment_needed: parsedResponse.comment_needed || false,
-        comment: parsedResponse.comment || "",
-        reasoning: parsedResponse.reasoning || "",
-      };
-    } catch (parseError: any) {
-      log("WARN", `Failed to parse JSON response, falling back to string check`, {
-        parseError: parseError.message,
-        aiResponse: aiResponse.substring(0, 200),
-        submissionType,
-        repoInfo,
-      });
-      
-      const fallbackCommentNeeded = !aiResponse.includes("NO_COMMENT_NEEDED");
-      return {
-        comment_needed: fallbackCommentNeeded,
-        comment: fallbackCommentNeeded ? aiResponse : "",
-        reasoning: fallbackCommentNeeded ? "Fallback to string parsing" : "No comment needed based on string check",
-      };
-    }
+    return result;
   } catch (error: any) {
     log("ERROR", `Error generating AI response for ${submissionType}`, {
       error: error.message,
