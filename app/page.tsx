@@ -10,6 +10,17 @@ import { useAuth } from "@/lib/auth";
 export default function JacquezLandingPage() {
   const { user, isAuthenticated } = useAuth();
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-dvh bg-background text-foreground">
       <main className="flex-1 flex items-center">
@@ -40,7 +51,7 @@ export default function JacquezLandingPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                {!isAuthenticated && (
+                {!isAuthenticated ? (
                   <Button
                     asChild
                     size="lg"
@@ -50,6 +61,14 @@ export default function JacquezLandingPage() {
                       <Github className="mr-2 h-5 w-5" /> Add to a GitHub
                       repository
                     </Link>
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleLogout}
+                    size="lg"
+                    className="bg-black text-white hover:bg-black/90"
+                  >
+                    Logout
                   </Button>
                 )}
               </div>

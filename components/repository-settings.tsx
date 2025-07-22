@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface Repository {
   id: number;
@@ -16,55 +16,69 @@ interface Repository {
   };
 }
 
-interface RepositorySettingsState {
-  [repoId: number]: boolean;
+interface Installation {
+  id: number;
+  account: {
+    login: string;
+    id: number;
+    type: string;
+  };
+  settingsUrl: string;
 }
 
 export function RepositorySettings() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
+  const [installations, setInstallations] = useState<Installation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [settings, setSettings] = useState<RepositorySettingsState>({});
 
   useEffect(() => {
-    fetchRepositories();
+    fetchData();
   }, []);
 
-  const fetchRepositories = async () => {
+  const fetchData = async () => {
     try {
-      const response = await fetch('/api/repositories');
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch repositories');
+      const [reposResponse, installationsResponse] = await Promise.all([
+        fetch("/api/repositories"),
+        fetch("/api/installations"),
+      ]);
+
+      const reposData = await reposResponse.json();
+      const installationsData = await installationsResponse.json();
+
+      if (!reposResponse.ok) {
+        throw new Error(reposData.error || "Failed to fetch repositories");
       }
-      
-      setRepositories(data.repositories || []);
-      
-      const initialSettings: RepositorySettingsState = {};
-      data.repositories?.forEach((repo: Repository) => {
-        initialSettings[repo.id] = false;
-      });
-      setSettings(initialSettings);
+
+      if (!installationsResponse.ok) {
+        throw new Error(
+          installationsData.error || "Failed to fetch installations"
+        );
+      }
+
+      setRepositories(reposData.repositories || []);
+      setInstallations(installationsData.installations || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleToggle = (repoId: number, enabled: boolean) => {
-    setSettings(prev => ({
-      ...prev,
-      [repoId]: enabled
-    }));
+  const getInstallationUrl = () => {
+    if (installations.length === 1) {
+      return installations[0].settingsUrl;
+    }
+    return "https://github.com/settings/installations";
   };
 
   if (loading) {
     return (
       <Card className="p-6">
         <div className="flex items-center justify-center">
-          <div className="text-sm text-muted-foreground">Loading repositories...</div>
+          <div className="text-sm text-muted-foreground">
+            Loading repositories...
+          </div>
         </div>
       </Card>
     );
@@ -85,9 +99,19 @@ export function RepositorySettings() {
       <Card className="p-6">
         <div className="text-center">
           <h3 className="text-lg font-semibold mb-2">No repositories found</h3>
-          <p className="text-sm text-muted-foreground">
-            Install the Jacquez GitHub App on repositories where you want Jacquez to help with your PRs.
+          <p className="text-sm text-muted-foreground mb-4">
+            Install the Jacquez GitHub App on repositories where you want
+            Jacquez to help with your PRs.
           </p>
+          <Button asChild>
+            <a
+              href={getInstallationUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Manage GitHub App Installations
+            </a>
+          </Button>
         </div>
       </Card>
     );
@@ -99,11 +123,19 @@ export function RepositorySettings() {
         <div>
           <h3 className="text-lg font-semibold mb-2">Repository settings</h3>
           <p className="text-sm text-muted-foreground">
-            Enable or disable Jacquez per repository from your installations list. 
-            Jacquez runs only on PRs you author.
+            Manage which repositories Jacquez has access to through your{" "}
+            <a
+              href={getInstallationUrl()}
+              target="_blank"
+              className="underline"
+              rel="noopener noreferrer"
+            >
+              GitHub App installations
+            </a>
+            .
           </p>
         </div>
-        
+
         <div className="space-y-4">
           {repositories.map((repo) => (
             <div
@@ -115,7 +147,7 @@ export function RepositorySettings() {
                   <div className="flex items-center space-x-2">
                     <span className="font-medium">{repo.name}</span>
                     {repo.private && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="outline" className="text-xs">
                         Private
                       </Badge>
                     )}
@@ -125,15 +157,11 @@ export function RepositorySettings() {
                   </div>
                 </div>
               </div>
-              
-              <div className="flex items-center space-x-3">
-                <span className="text-sm text-muted-foreground">
-                  {settings[repo.id] ? 'Enabled' : 'Disabled'}
-                </span>
-                <Switch
-                  checked={settings[repo.id] || false}
-                  onCheckedChange={(checked) => handleToggle(repo.id, checked)}
-                />
+
+              <div className="flex items-center">
+                <Badge variant="secondary" className="text-xs">
+                  Installed
+                </Badge>
               </div>
             </div>
           ))}
