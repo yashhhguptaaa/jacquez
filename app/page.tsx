@@ -4,10 +4,22 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Github } from "lucide-react";
 import { GithubCommentDemo } from "@/components/github-comment-demo";
+import { RepositorySettings } from "@/components/repository-settings";
 import { useAuth } from "@/lib/auth";
 
 export default function JacquezLandingPage() {
   const { user, isAuthenticated } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-dvh bg-background text-foreground">
@@ -39,7 +51,7 @@ export default function JacquezLandingPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                {!isAuthenticated && (
+                {!isAuthenticated ? (
                   <Button
                     asChild
                     size="lg"
@@ -50,11 +62,19 @@ export default function JacquezLandingPage() {
                       repository
                     </Link>
                   </Button>
+                ) : (
+                  <Button
+                    onClick={handleLogout}
+                    size="lg"
+                    className="bg-black text-white hover:bg-black/90"
+                  >
+                    Logout
+                  </Button>
                 )}
               </div>
             </div>
             <div className="flex items-center justify-center">
-              <GithubCommentDemo />
+              {isAuthenticated ? <RepositorySettings /> : <GithubCommentDemo />}
             </div>
           </div>
         </div>
