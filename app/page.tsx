@@ -30,7 +30,7 @@ export default function JacquezLandingPage() {
                   Jacquez
                 </h1>
                 <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                  A friendly moderator for open-source repositories.
+                  A friendly moderator for OSS repos.
                   <br />
                   <br />
                   Jacquez helps keep your GitHub discussions and issues
@@ -39,7 +39,7 @@ export default function JacquezLandingPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                {!isAuthenticated ? (
+                {!isAuthenticated && (
                   <Button
                     asChild
                     size="lg"

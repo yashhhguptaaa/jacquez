@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     "redirect_uri",
     `${new URL(request.url).origin}/api/auth/callback`
   );
+  console.log(authUrl.toString());
   authUrl.searchParams.set("scope", "user:email");
   authUrl.searchParams.set("state", Math.random().toString(36).substring(7));
 
