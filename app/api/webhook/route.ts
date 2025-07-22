@@ -49,6 +49,51 @@ function containsAsideKeyword(content: string): boolean {
   return content.toLowerCase().includes("aside");
 }
 
+// Helper function to fetch comment thread for issues and PRs
+async function fetchCommentThread(
+  octokit: any,
+  owner: string,
+  repo: string,
+  issueNumber: number,
+  maxComments: number = 20
+): Promise<string> {
+  try {
+    log("INFO", `Fetching comment thread for ${owner}/${repo}#${issueNumber}`);
+    
+    const response = await octokit.request(
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
+      {
+        owner,
+        repo,
+        issue_number: issueNumber,
+        per_page: maxComments,
+        sort: "created",
+        direction: "asc"
+      }
+    );
+
+    if (response.data.length === 0) {
+      return "No previous comments in this thread.";
+    }
+
+    const commentThread = response.data
+      .map((comment: any, index: number) => {
+        const author = comment.user.login;
+        const createdAt = new Date(comment.created_at).toLocaleString();
+        const body = comment.body || "";
+        return `Comment ${index + 1} by @${author} (${createdAt}):\n${body}`;
+      })
+      .join("\n\n---\n\n");
+
+    return `Previous comments in this thread:\n\n${commentThread}`;
+  } catch (error: any) {
+    log("ERROR", `Error fetching comment thread for ${owner}/${repo}#${issueNumber}`, {
+      error: error.message,
+    });
+    return "Unable to fetch previous comments.";
+  }
+}
+
 // Helper function to load contributing.md from repository with caching
 async function loadContributingGuidelines(
   octokit: any,
@@ -121,7 +166,8 @@ async function generateFriendlyResponse(
   contributingContent: string,
   submissionContent: string,
   submissionType: string,
-  repoInfo: any = null
+  repoInfo: any = null,
+  commentThreadContext: string = ""
 ): Promise<{ comment_needed: boolean; comment: string; reasoning: string }> {
   try {
     log("INFO", `Generating AI response for ${submissionType}`);
@@ -131,11 +177,13 @@ async function generateFriendlyResponse(
 Contributing guidelines:
 ${contributingContent}
 
+${commentThreadContext ? `\n${commentThreadContext}\n` : ""}
+
 Submission type: ${submissionType}
 Submission content:
 ${submissionContent}
 
-Analyze the submission against the contributing guidelines. You should ONLY provide a response if there are clear, obvious violations of the guidelines that would prevent proper review or processing.
+Analyze the submission against the contributing guidelines. Consider the full context of the conversation thread above when making your decision. You should ONLY provide a response if there are clear, obvious violations of the guidelines that would prevent proper review or processing.
 
 CRITICAL: Only comment if you can identify SPECIFIC, CLEAR violations such as:
 - Missing required template sections that are explicitly mentioned in guidelines
@@ -242,12 +290,20 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
         return;
       }
 
+      const commentThreadContext = await fetchCommentThread(
+        octokit,
+        owner,
+        repo,
+        prNumber
+      );
+
       // Generate response using Claude to check against guidelines
       const response = await generateFriendlyResponse(
         contributingContent,
         prBody,
         "pull request",
-        repoInfo
+        repoInfo,
+        commentThreadContext
       );
 
       // Only post comment if there are clear violations
@@ -322,12 +378,20 @@ async function handleIssueOpened({ octokit, payload }: any) {
         return;
       }
 
+      const commentThreadContext = await fetchCommentThread(
+        octokit,
+        owner,
+        repo,
+        issueNumber
+      );
+
       // Generate response using Claude to check against guidelines
       const response = await generateFriendlyResponse(
         contributingContent,
         issueBody,
         "issue",
-        repoInfo
+        repoInfo,
+        commentThreadContext
       );
 
       // Only post comment if there are clear violations
@@ -413,12 +477,20 @@ async function handleIssueCommentCreated({ octokit, payload }: any) {
 
         log("INFO", "Generating response for comment", repoInfo);
 
+        const commentThreadContext = await fetchCommentThread(
+          octokit,
+          owner,
+          repo,
+          issueNumber
+        );
+
         // Generate response using Claude to check against guidelines
         const response = await generateFriendlyResponse(
           contributingContent,
           commentBody,
           "comment",
-          repoInfo
+          repoInfo,
+          commentThreadContext
         );
 
         // Only post comment if there are clear violations
