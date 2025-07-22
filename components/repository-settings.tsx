@@ -86,7 +86,7 @@ export function RepositorySettings() {
         <div className="text-center">
           <h3 className="text-lg font-semibold mb-2">No repositories found</h3>
           <p className="text-sm text-muted-foreground">
-            Install the Jacquez GitHub App on repositories where you want Bugbot to help with your PRs.
+            Install the Jacquez GitHub App on repositories where you want Jacquez to help with your PRs.
           </p>
         </div>
       </Card>
@@ -99,8 +99,8 @@ export function RepositorySettings() {
         <div>
           <h3 className="text-lg font-semibold mb-2">Repository settings</h3>
           <p className="text-sm text-muted-foreground">
-            Enable or disable Bugbot per repository from your installations list. 
-            Bugbot runs only on PRs you author.
+            Enable or disable Jacquez per repository from your installations list. 
+            Jacquez runs only on PRs you author.
           </p>
         </div>
         
