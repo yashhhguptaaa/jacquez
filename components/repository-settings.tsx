@@ -75,9 +75,33 @@ export function RepositorySettings() {
   if (loading) {
     return (
       <Card className="p-6">
-        <div className="flex items-center justify-center">
-          <div className="text-sm text-muted-foreground">
-            Loading repositories...
+        <div className="space-y-6">
+          <div>
+            <div className="h-7 bg-gray-200 rounded w-48 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-full animate-pulse"></div>
+          </div>
+
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between p-4 border rounded-lg"
+              >
+                <div className="flex items-center space-x-3">
+                  <div>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <div className="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
+                      <div className="h-5 bg-gray-200 rounded w-12 animate-pulse"></div>
+                    </div>
+                    <div className="h-4 bg-gray-200 rounded w-40 animate-pulse"></div>
+                  </div>
+                </div>
+
+                <div className="flex items-center">
+                  <div className="h-5 bg-gray-200 rounded w-16 animate-pulse"></div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </Card>
