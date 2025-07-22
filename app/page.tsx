@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Github } from "lucide-react";
+import { GithubCommentDemo } from "@/components/github-comment-demo";
 import { RepositorySettings } from "@/components/repository-settings";
 import { useAuth } from "@/lib/auth";
 
@@ -71,7 +72,7 @@ export default function JacquezLandingPage() {
               </div>
             </div>
             <div className="flex items-center justify-center">
-              <RepositorySettings />
+              {isAuthenticated ? <RepositorySettings /> : <GithubCommentDemo />}
             </div>
           </div>
         </div>
