@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -39,32 +39,15 @@ export default function JacquezLandingPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                {isAuthenticated ? (
+                {!isAuthenticated ? (
                   <Button
                     asChild
                     size="lg"
                     className="bg-black text-white hover:bg-black/90"
                   >
-                    <Link
-                      href="https://github.com/apps/jacquez"
-                      target="_blank"
-                      prefetch={false}
-                    >
+                    <Link href="/api/auth/github" prefetch={false}>
                       <Github className="mr-2 h-5 w-5" /> Add to a GitHub
                       repository
-                    </Link>
-                  </Button>
-                ) : (
-                  <Button
-                    asChild
-                    size="lg"
-                    className="bg-black text-white hover:bg-black/90"
-                  >
-                    <Link
-                      href="/api/auth/github"
-                      prefetch={false}
-                    >
-                      <Github className="mr-2 h-5 w-5" /> Sign in with GitHub
                     </Link>
                   </Button>
                 )}
