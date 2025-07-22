@@ -23,10 +23,10 @@ const anthropic = new Anthropic({
 
 // Create GitHub App instance
 const app = new App({
-  appId: process.env.APP_ID!,
-  privateKey: process.env.PRIVATE_KEY!,
+  appId: process.env.APP_ID || process.env.GH_APP_ID!,
+  privateKey: process.env.PRIVATE_KEY || process.env.GH_PRIVATE_KEY!,
   webhooks: {
-    secret: process.env.WEBHOOK_SECRET!,
+    secret: process.env.WEBHOOK_SECRET || process.env.GH_WEBHOOK_SECRET!,
   },
 });
 

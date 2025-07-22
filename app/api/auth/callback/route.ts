@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || 'Ov23liJ0xVB8vtPP1apH';
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || process.env.GH_CLIENT_SECRET;
 
 if (!GITHUB_CLIENT_SECRET) {
-  throw new Error('GITHUB_CLIENT_SECRET is required');
+  throw new Error('GH_CLIENT_SECRET is required');
 }
 
 export async function GET(request: NextRequest) {
