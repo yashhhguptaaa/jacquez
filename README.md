@@ -1,14 +1,6 @@
-# GitHub App - Contributing Guidelines Bot
+# Jacquez
 
-A GitHub App that automatically validates submissions against repository contributing guidelines using AI-powered analysis.
-
-## Features
-
-- **Automatic Validation**: Checks pull requests, issues, and comments against contributing guidelines
-- **AI-Powered**: Uses Claude AI to provide contextual, friendly feedback
-- **Contributing Guidelines Detection**: Automatically loads `CONTRIBUTING.md` from repositories
-- **Webhook Support**: Responds to GitHub webhook events in real-time
-- **Friendly Feedback**: Provides encouraging responses and gentle reminders
+A friendly moderator for OSS repos
 
 ## Prerequisites
 
@@ -112,4 +104,4 @@ NODE_ENV=production npm start
 
 ## License
 
-This project is licensed under the ISC License.
+This project is licensed under the MIT License.
