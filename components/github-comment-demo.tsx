@@ -5,7 +5,7 @@ import { XCircle, CheckCircle2, Smile, MoreHorizontal } from "lucide-react";
 
 export function GithubCommentDemo() {
   return (
-    <Card className="w-full max-w-none md:max-w-3xl mx-auto shadow-lg rounded-none md:rounded-lg border-x-0 md:border-x">
+    <Card className="w-full max-w-none md:max-w-3xl md:mx-auto shadow-none md:shadow-lg rounded-none md:rounded-lg border-x-0 md:border-x">
       <div className="px-4 space-y-4">
         <div className="flex gap-3">
           <Avatar className="bg-gray-100 dark:bg-gray-800">
