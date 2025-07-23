@@ -75,7 +75,7 @@ export default function JacquezLandingPage() {
               </div>
             </div>
             <div className="flex items-center justify-center">
-              <Card className="p-6 w-full max-w-none md:max-w-2xl md:mx-auto shadow-none md:shadow-lg rounded-none md:rounded-lg border-x-0 md:border-x">
+              <Card className="bg-white dark:bg-black p-6 w-full max-w-none md:max-w-2xl md:mx-auto shadow-none md:shadow-lg rounded-none md:rounded-lg border-x-0 md:border-x">
                 {isAuthenticated ? (
                   <RepositorySettings />
                 ) : (
