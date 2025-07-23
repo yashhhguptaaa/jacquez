@@ -7,10 +7,7 @@ export function GithubCommentDemo() {
     <div className="space-y-6">
       <div className="flex gap-3">
         <Avatar className="hidden md:flex bg-gray-100 dark:bg-gray-800">
-          <AvatarImage
-            src="/placeholder.svg?width=40&height=40"
-            alt="@slavingia"
-          />
+          <AvatarImage alt="@slavingia" />
           <AvatarFallback>S</AvatarFallback>
         </Avatar>
         <div className="flex-1">
@@ -42,10 +39,7 @@ export function GithubCommentDemo() {
       {/* Jacquez Bot Comment */}
       <div className="flex gap-3">
         <Avatar className="hidden md:flex bg-gray-100 dark:bg-gray-800">
-          <AvatarImage
-            src="/placeholder.svg?width=40&height=40"
-            alt="@jacquez-bot"
-          />
+          <AvatarImage alt="@jacquez-bot" />
           <AvatarFallback>J</AvatarFallback>
         </Avatar>
         <div className="flex-1">
