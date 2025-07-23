@@ -27,23 +27,7 @@ Copy the example environment file:
 cp .env.example .env
 ```
 
-Edit `.env` with your credentials:
-
-```env
-# GitHub App Configuration
-GH_APP_ID=your_app_id
-GH_WEBHOOK_SECRET=your_webhook_secret
-GH_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
-...your private key content here...
------END RSA PRIVATE KEY-----"
-PORT=3000
-
-# Smee.io webhook URL for local development
-WEBHOOK_URL=https://smee.io/your_channel_id
-
-# Anthropic API key
-ANTHROPIC_API_KEY=your_anthropic_api_key
-```
+Edit `.env` with your credentials.
 
 ### 3. GitHub App Setup
 

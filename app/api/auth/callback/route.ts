@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const GH_CLIENT_ID = process.env.GH_CLIENT_ID || "Ov23liJ0xVB8vtPP1apH";
+const GH_CLIENT_ID = process.env.GH_CLIENT_ID || "Iv23li7lc1AzCTzvjCjz";
 const GH_CLIENT_SECRET = process.env.GH_CLIENT_SECRET;
 
 if (!GH_CLIENT_SECRET) {
