@@ -7,7 +7,7 @@ export function GithubCommentDemo() {
     <div className="space-y-6">
       <div className="flex gap-3">
         <Avatar className="hidden md:flex bg-gray-100 dark:bg-gray-800">
-          <AvatarImage alt="@slavingia" />git 
+          <AvatarImage alt="@slavingia" />
           <AvatarFallback>S</AvatarFallback>
         </Avatar>
         <div className="flex-1">
