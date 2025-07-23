@@ -6,6 +6,7 @@ import { Github } from "lucide-react";
 import { GithubCommentDemo } from "@/components/github-comment-demo";
 import { RepositorySettings } from "@/components/repository-settings";
 import { useAuth } from "@/lib/auth";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function JacquezLandingPage() {
   const { user, isAuthenticated } = useAuth();
@@ -23,6 +24,24 @@ export default function JacquezLandingPage() {
 
   return (
     <div className="flex flex-col min-h-dvh bg-background text-foreground">
+      <header className="w-full border-b">
+        <div className="container mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 32 32"
+              fill="none"
+              aria-hidden="true"
+              className="inline-block"
+            >
+              <polygon points="4,28 28,28 28,4" fill="currentColor" />
+            </svg>
+            <span className="text-xl font-bold">Jacquez</span>
+          </div>
+          <ThemeToggle />
+        </div>
+      </header>
       <main className="flex-1 flex items-center">
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
