@@ -22,7 +22,7 @@ export default function JacquezLandingPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-dvh bg-background text-foreground">
+    <div className="flex flex-col min-h-dvh bg-white dark:bg-black text-black dark:text-white">
       <main className="flex-1 flex items-center">
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
