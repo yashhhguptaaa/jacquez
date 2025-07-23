@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['@octokit/webhooks'],
+  serverExternalPackages: ["@octokit/webhooks"],
   env: {
     GH_APP_ID: process.env.GH_APP_ID,
     GH_WEBHOOK_SECRET: process.env.GH_WEBHOOK_SECRET,

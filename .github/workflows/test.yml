@@ -2,9 +2,9 @@ name: Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
@@ -12,31 +12,30 @@ jobs:
     environment: Test
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run linter
-      run: npm run lint
-    
-    - name: Run tests
-      run: npm test
-    
-    - name: Build project
-      run: npm run build
-      env:
-        GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
-        GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
-        GH_APP_ID: ${{ secrets.GH_APP_ID }}
-        GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
-        GH_WEBHOOK_SECRET: ${{ secrets.GH_WEBHOOK_SECRET }}
-    
-    - name: Run tests with coverage
-      run: npm run test:coverage
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build project
+        run: npm run build
+        env:
+          GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
+          GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          GH_APP_ID: ${{ secrets.GH_APP_ID }}
+          GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
+          GH_WEBHOOK_SECRET: ${{ secrets.GH_WEBHOOK_SECRET }}
+      - name: Run tests with coverage
+        run: npm run test:coverage
