@@ -22,7 +22,7 @@ export default function JacquezLandingPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-dvh bg-background text-foreground">
+    <div className="flex flex-col min-h-dvh bg-white dark:bg-black text-black dark:text-white">
       <main className="flex-1 flex items-center">
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
@@ -41,7 +41,7 @@ export default function JacquezLandingPage() {
                   </svg>
                   Jacquez
                 </h1>
-                <p className="max-w-[600px] text-muted-foreground md:text-xl">
+                <p className="max-w-[600px] text-gray-600 dark:text-gray-300 md:text-xl">
                   A friendly moderator for OSS repos.
                   <br />
                   <br />
@@ -55,7 +55,7 @@ export default function JacquezLandingPage() {
                   <Button
                     asChild
                     size="lg"
-                    className="bg-black text-white hover:bg-black/90"
+                    className="bg-black dark:bg-white text-white dark:text-black hover:bg-black/90 dark:hover:bg-white/90"
                   >
                     <Link href="/api/auth/github" prefetch={false}>
                       <Github className="mr-2 h-5 w-5" /> Add to a GitHub
@@ -66,7 +66,7 @@ export default function JacquezLandingPage() {
                   <Button
                     onClick={handleLogout}
                     size="lg"
-                    className="bg-black text-white hover:bg-black/90"
+                    className="bg-black dark:bg-white text-white dark:text-black hover:bg-black/90 dark:hover:bg-white/90"
                   >
                     Logout
                   </Button>
@@ -81,11 +81,11 @@ export default function JacquezLandingPage() {
       </main>
       <footer className="w-full">
         <div className="container mx-auto flex h-16 items-center justify-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             A soon-to-be open-source project by{" "}
             <Link
               href="https://antiwork.com"
-              className="font-medium underline-offset-4 hover:underline"
+              className="font-medium underline-offset-4 hover:underline text-black dark:text-white"
               prefetch={false}
               target="_blank"
               rel="noopener noreferrer"
