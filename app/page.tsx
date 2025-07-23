@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Github } from "lucide-react";
 import { GithubCommentDemo } from "@/components/github-comment-demo";
 import { RepositorySettings } from "@/components/repository-settings";
@@ -22,13 +23,13 @@ export default function JacquezLandingPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-dvh bg-white dark:bg-black text-black dark:text-white">
+    <div className="flex flex-col min-h-dvh bg-gray-100 dark:bg-black text-black dark:text-white">
       <main className="flex-1 flex items-center">
-        <div className="container mx-auto px-4 md:px-6">
+        <div className="container mx-auto px-0 md:px-6 pt-10 md:pt-0">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-            <div className="flex flex-col justify-center space-y-6">
+            <div className="flex flex-col space-y-6 text-left justify-center px-6 md:px-0">
               <div className="space-y-4">
-                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none flex items-center gap-2">
+                <h1 className="font-bold tracking-tighter text-5xl xl:text-6xl/none flex items-center gap-2">
                   <svg
                     width="64"
                     height="64"
@@ -74,7 +75,13 @@ export default function JacquezLandingPage() {
               </div>
             </div>
             <div className="flex items-center justify-center">
-              {isAuthenticated ? <RepositorySettings /> : <GithubCommentDemo />}
+              <Card className="bg-white dark:bg-black p-6 w-full max-w-none md:max-w-2xl md:mx-auto shadow-none md:shadow-lg rounded-none md:rounded-lg border-x-0 md:border-x">
+                {isAuthenticated ? (
+                  <RepositorySettings />
+                ) : (
+                  <GithubCommentDemo />
+                )}
+              </Card>
             </div>
           </div>
         </div>
