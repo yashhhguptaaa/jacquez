@@ -6,7 +6,7 @@ export function GithubCommentDemo() {
   return (
     <div className="space-y-6">
       <div className="flex gap-3">
-        <Avatar className="bg-gray-100 dark:bg-gray-800">
+        <Avatar className="hidden md:flex bg-gray-100 dark:bg-gray-800">
           <AvatarImage
             src="/placeholder.svg?width=40&height=40"
             alt="@slavingia"
@@ -21,12 +21,11 @@ export function GithubCommentDemo() {
                   slavingia
                 </span>
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                  commented 48 minutes ago
+                  48 minutes ago
                 </span>
                 <Badge variant="outline">Member</Badge>
                 <Badge variant="secondary">Author</Badge>
               </div>
-              <MoreHorizontal className="h-5 w-5 text-gray-500" />
             </div>
             <div className="p-4 text-gray-800 dark:text-gray-200">
               <p>one more time ??</p>
@@ -42,7 +41,7 @@ export function GithubCommentDemo() {
 
       {/* Jacquez Bot Comment */}
       <div className="flex gap-3">
-        <Avatar className="bg-gray-100 dark:bg-gray-800">
+        <Avatar className="hidden md:flex bg-gray-100 dark:bg-gray-800">
           <AvatarImage
             src="/placeholder.svg?width=40&height=40"
             alt="@jacquez-bot"
@@ -63,10 +62,9 @@ export function GithubCommentDemo() {
                   bot
                 </Badge>
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                  commented 47 minutes ago
+                  47 minutes ago
                 </span>
               </div>
-              <MoreHorizontal className="h-5 w-5 text-gray-500" />
             </div>
             <div className="p-4 text-gray-700 dark:text-gray-300 space-y-4">
               <p>

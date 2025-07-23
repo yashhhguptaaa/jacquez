@@ -25,7 +25,7 @@ export default function JacquezLandingPage() {
   return (
     <div className="flex flex-col min-h-dvh bg-gray-100 dark:bg-black text-black dark:text-white">
       <main className="flex-1 flex items-center">
-        <div className="container mx-auto px-0 md:px-6">
+        <div className="container mx-auto px-0 md:px-6 pt-10 md:pt-0">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
             <div className="flex flex-col space-y-6 text-left justify-center px-6 md:px-0">
               <div className="space-y-4">
