@@ -13,7 +13,7 @@ export default {
     'app/**/*.ts',
     '!app/**/*.d.ts',
   ],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
 };
