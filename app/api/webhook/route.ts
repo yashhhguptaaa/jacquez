@@ -10,7 +10,7 @@ const config = {
   minCommentLength: parseInt(process.env.MIN_COMMENT_LENGTH!) || 3,
   enableDetailedLogging: process.env.ENABLE_DETAILED_LOGGING === "true",
   enableCaching: process.env.ENABLE_CACHING !== "false",
-  aiModel: process.env.AI_MODEL || "claude-3-5-sonnet-20241022",
+  aiModel: process.env.AI_MODEL || "claude-sonnet-4-20250514",
 };
 
 // In-memory cache for contributing guidelines
