@@ -172,16 +172,7 @@ async function generateFriendlyResponse(
   try {
     log("INFO", `Generating AI response for ${submissionType}`);
 
-    const prompt = `You are a conservative GitHub bot that helps contributors follow project guidelines. You should ONLY comment when there are clear, obvious violations of the contributing guidelines that would prevent proper review or processing.
-
-Contributing guidelines:
-${contributingContent}
-
-${commentThreadContext ? `\n${commentThreadContext}\n` : ""}
-
-Submission type: ${submissionType}
-Submission content:
-${submissionContent}
+    const systemPrompt = `You are a conservative GitHub bot that helps contributors follow project guidelines. You should ONLY comment when there are clear, obvious violations of the contributing guidelines that would prevent proper review or processing.
 
 Analyze the submission against the contributing guidelines. Consider the full context of the conversation thread above when making your decision. You should ONLY provide a response if there are clear, obvious violations of the guidelines that would prevent proper review or processing.
 
@@ -220,30 +211,50 @@ If you determine there ARE clear violations, the comment should:
 
 Keep comments concise (1-2 sentences) and only comment on clear violations.`;
 
+    const messages: Anthropic.Messages.MessageParam[] = [
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `Contributing guidelines:\n${contributingContent}`,
+            cache_control: { type: "ephemeral" },
+          },
+          {
+            type: "text",
+            text: `${
+              commentThreadContext ? `\n${commentThreadContext}\n` : ""
+            }
+
+Submission type: ${submissionType}
+Submission content:
+${submissionContent}`,
+          },
+        ],
+      },
+      {
+        role: "assistant",
+        content: "{",
+      },
+    ];
+
     const response = await anthropic.messages.create({
       model: config.aiModel,
       max_tokens: config.maxTokens,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-        {
-          role: "assistant",
-          content: "{",
-        },
-      ],
+      system: systemPrompt,
+      messages: messages,
     });
 
     const aiResponse =
       response.content[0].type === "text" ? response.content[0].text : "";
-    
+
     const result = parseAIResponse(aiResponse);
-    
+
     log("INFO", `AI response generated successfully`, {
       comment_needed: result.comment_needed,
       submissionType,
       repoInfo,
+      usage: response.usage,
     });
 
     return result;
