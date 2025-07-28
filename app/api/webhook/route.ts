@@ -287,6 +287,12 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
     ...repoInfo,
   });
 
+  // Skip if pull request is a draft
+  if (payload.pull_request.draft) {
+    log("INFO", `Skipping draft PR analysis`, repoInfo);
+    return;
+  }
+
   try {
     // Load contributing guidelines
     const contributingContent = await loadContributingGuidelines(
