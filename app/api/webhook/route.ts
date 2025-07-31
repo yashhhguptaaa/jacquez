@@ -288,6 +288,12 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
     ...repoInfo,
   });
 
+  // Skip if pull request is from a bot
+  if (payload.pull_request.user.type === "Bot") {
+    log("INFO", "Skipping bot pull request", repoInfo);
+    return;
+  }
+
   // Skip if pull request is a draft
   if (payload.pull_request.draft) {
     log("INFO", `Skipping draft PR analysis`, repoInfo);
@@ -397,6 +403,12 @@ async function handleIssueOpened({ octokit, payload }: any) {
     title: payload.issue.title,
     ...repoInfo,
   });
+
+  // Skip if issue is from a bot
+  if (payload.issue.user.type === "Bot") {
+    log("INFO", "Skipping bot issue", repoInfo);
+    return;
+  }
 
   try {
     // Load contributing guidelines
