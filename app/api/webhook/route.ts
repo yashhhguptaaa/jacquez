@@ -207,7 +207,6 @@ If you determine there ARE clear violations, the comment should:
 - Quote the exact guideline requirements that aren't met
 - Explain why those requirements are necessary
 - Provide clear, actionable next steps
-- Mention that the PR will be closed but can be re-opened once issues are addressed
 - Maintain an encouraging tone
 
 Keep comments concise (1-2 sentences) and only comment on clear violations.`;
@@ -342,23 +341,7 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
           }
         );
 
-        try {
-          await octokit.request(
-            "PATCH /repos/{owner}/{repo}/pulls/{pull_number}",
-            {
-              owner: owner,
-              repo: repo,
-              pull_number: prNumber,
-              state: "closed",
-            }
-          );
-          log("INFO", `Comment posted and PR closed for violations`, { ...repoInfo, reasoning: response.reasoning });
-        } catch (closeError: any) {
-          log("ERROR", `Failed to close PR after posting violation comment`, {
-            error: closeError.message,
-            ...repoInfo,
-          });
-        }
+        log("INFO", `Comment posted successfully for PR`, { ...repoInfo, reasoning: response.reasoning });
       } else {
         log(
           "INFO",
