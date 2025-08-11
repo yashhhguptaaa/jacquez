@@ -62,44 +62,14 @@ export function GithubCommentDemo() {
             </div>
             <div className="p-4 text-gray-700 dark:text-gray-300 space-y-4">
               <p>
-                Hi there! Thanks for your interest in contributing to Flexile.
-              </p>
-              <p>
-                I noticed this comment doesn't follow our communication
-                guidelines. Specifically:
+                This comment uses multiple question marks, which goes against our communication guidelines.
               </p>
               <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 text-gray-600 dark:text-gray-400 italic">
                 Use professional English in all communication with no excessive
                 capitalization, question marks, or informal language
               </blockquote>
               <p>
-                The comment "one more time ??" uses multiple question marks and
-                informal language. As our guidelines note, this makes async
-                communication more difficult.
-              </p>
-              <div>
-                <p>Here's an example of how to rephrase this professionally:</p>
-                <div className="mt-2 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <XCircle className="h-5 w-5 text-red-500" />
-                    <span className="line-through text-gray-500">
-                      "one more time ??"
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    <span>"I'd like to try this again."</span>
-                  </div>
-                </div>
-              </div>
-              <p>
-                Could you please update your comment to use professional
-                language? This helps keep discussions clear and productive for
-                all contributors.
-              </p>
-              <p>
-                Let me know if you have any questions! We're happy to help you
-                get started contributing.
+                Please rephrase using standard punctuation: "I'd like to try this again."
               </p>
               <div className="mt-2">
                 <button className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
