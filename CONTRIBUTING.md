@@ -22,9 +22,8 @@ Currently PRs can be merged without addressing any tracked work, making it diffi
 
 All pull requests must meet these requirements:
 
-1. **Close an existing issue**: Every PR must reference and close an existing issue using `Closes #123` or `Fixes #456` in the description
-2. **Include visual documentation**: For any UI changes or new features, provide:
+1. **Include visual documentation**: For any UI changes or new features, provide:
    - **Before screenshots/video**: Show the current state
    - **After screenshots/video**: Show your changes
-3. **Test suite must pass**: All tests must pass before merge
+2. **Test suite must pass**: All tests must pass before merge
    - If CI fails due to missing keys or environment issues, run tests locally and include a screenshot of the **complete test suite passing** in your PR description
