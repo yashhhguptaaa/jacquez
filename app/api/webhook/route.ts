@@ -95,7 +95,7 @@ async function fetchCommentThread(
 }
 
 // Helper function to fetch PR files and diff data
-async function fetchPRFiles(
+export async function fetchPRFiles(
   octokit: any,
   owner: string,
   repo: string,
@@ -124,7 +124,7 @@ async function fetchPRFiles(
 }
 
 // Helper function to parse diff patch and extract changed lines with positions
-function parseDiffForChangedLines(patch: string): Array<{line: string, position: number, lineNumber: number}> {
+export function parseDiffForChangedLines(patch: string): Array<{line: string, position: number, lineNumber: number}> {
   if (!patch) return [];
   
   const lines = patch.split('\n');
@@ -309,7 +309,7 @@ ${submissionContent}`,
 }
 
 // Generate AI response for code analysis with line-specific feedback
-async function generateCodeAnalysisResponse(
+export async function generateCodeAnalysisResponse(
   contributingContent: string,
   fileName: string,
   changedLines: Array<{line: string, position: number, lineNumber: number}>,
@@ -684,7 +684,7 @@ async function handleIssueCommentCreated({ octokit, payload }: any) {
 }
 
 // Handle pull request code review - analyze specific code changes
-async function handlePullRequestCodeReview({ octokit, payload }: any) {
+export async function handlePullRequestCodeReview({ octokit, payload }: any) {
   const owner = payload.repository.owner.login;
   const repo = payload.repository.name;
   const prNumber = payload.pull_request.number;
