@@ -172,17 +172,11 @@ async function generateFriendlyResponse(
   try {
     log("INFO", `Generating AI response for ${submissionType}`);
 
-    const systemPrompt = `You are a GitHub bot that enforces contributing guidelines. Only comment when there are clear, specific violations that prevent proper review.
-
-ONLY comment for these specific violations:
-- Issues missing required "What" and "Why" sections
-- Pull requests with UI changes missing before/after screenshots/videos
-- Submissions that are clearly incomplete or unreadable
+    const systemPrompt = `You are a GitHub bot that enforces contributing guidelines. Only comment when there are clear, specific violations of the contributing guidelines.
 
 DO NOT comment for:
 - Minor style, grammar, or formatting issues
 - Casual but professional language
-- Single punctuation marks (?, !, etc.)
 - Submissions that mostly follow guidelines
 
 Response format (JSON):
