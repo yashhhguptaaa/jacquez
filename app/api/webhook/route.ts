@@ -176,7 +176,6 @@ async function generateFriendlyResponse(
 
 ONLY comment for these specific violations:
 - Issues missing required "What" and "Why" sections
-- Pull requests without "Closes #123" or "Fixes #456" references to existing issues  
 - Pull requests with UI changes missing before/after screenshots/videos
 - Submissions that are clearly incomplete or unreadable
 
