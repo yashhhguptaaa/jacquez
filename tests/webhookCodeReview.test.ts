@@ -1,34 +1,10 @@
 import { jest } from '@jest/globals';
-
-function parseDiffForChangedLines(patch: string): Array<{line: string, position: number, lineNumber: number}> {
-  if (!patch) return [];
-  
-  const lines = patch.split('\n');
-  const changedLines: Array<{line: string, position: number, lineNumber: number}> = [];
-  let position = 0;
-  let lineNumber = 0;
-  
-  for (const line of lines) {
-    if (line.startsWith('@@')) {
-      const match = line.match(/\+(\d+)/);
-      if (match) {
-        lineNumber = parseInt(match[1]) - 1;
-      }
-    } else if (line.startsWith('+') && !line.startsWith('+++')) {
-      lineNumber++;
-      changedLines.push({
-        line: line.substring(1),
-        position: position,
-        lineNumber: lineNumber
-      });
-    } else if (line.startsWith(' ')) {
-      lineNumber++;
-    }
-    position++;
-  }
-  
-  return changedLines;
-}
+import { 
+  fetchPRFiles, 
+  parseDiffForChangedLines, 
+  generateCodeAnalysisResponse, 
+  handlePullRequestCodeReview 
+} from '../utils/prCodeReview';
 
 describe('PR Code Review Functionality', () => {
   beforeEach(() => {

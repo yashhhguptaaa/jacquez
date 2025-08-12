@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { App } from "octokit";
 import Anthropic from "@anthropic-ai/sdk";
 import { parseAIResponse } from "../../../utils/jsonParser";
+import { 
+  fetchPRFiles, 
+  parseDiffForChangedLines, 
+  generateCodeAnalysisResponse, 
+  handlePullRequestCodeReview 
+} from "../../../utils/prCodeReview";
 
 // Configuration
 const config = {
@@ -94,65 +100,6 @@ async function fetchCommentThread(
   }
 }
 
-// Helper function to fetch PR files and diff data
-export async function fetchPRFiles(
-  octokit: any,
-  owner: string,
-  repo: string,
-  prNumber: number
-): Promise<any[]> {
-  try {
-    log("INFO", `Fetching PR files for ${owner}/${repo}#${prNumber}`);
-    
-    const response = await octokit.request(
-      "GET /repos/{owner}/{repo}/pulls/{pull_number}/files",
-      {
-        owner,
-        repo,
-        pull_number: prNumber,
-        per_page: 100,
-      }
-    );
-
-    return response.data || [];
-  } catch (error: any) {
-    log("ERROR", `Error fetching PR files for ${owner}/${repo}#${prNumber}`, {
-      error: error.message,
-    });
-    return [];
-  }
-}
-
-// Helper function to parse diff patch and extract changed lines with positions
-export function parseDiffForChangedLines(patch: string): Array<{line: string, position: number, lineNumber: number}> {
-  if (!patch) return [];
-  
-  const lines = patch.split('\n');
-  const changedLines: Array<{line: string, position: number, lineNumber: number}> = [];
-  let position = 0;
-  let lineNumber = 0;
-  
-  for (const line of lines) {
-    if (line.startsWith('@@')) {
-      const match = line.match(/\+(\d+)/);
-      if (match) {
-        lineNumber = parseInt(match[1]) - 1;
-      }
-    } else if (line.startsWith('+') && !line.startsWith('+++')) {
-      lineNumber++;
-      changedLines.push({
-        line: line.substring(1),
-        position: position,
-        lineNumber: lineNumber
-      });
-    } else if (line.startsWith(' ')) {
-      lineNumber++;
-    }
-    position++;
-  }
-  
-  return changedLines;
-}
 
 // Helper function to load contributing.md from repository with caching
 async function loadContributingGuidelines(
@@ -308,90 +255,6 @@ ${submissionContent}`,
   }
 }
 
-// Generate AI response for code analysis with line-specific feedback
-export async function generateCodeAnalysisResponse(
-  contributingContent: string,
-  fileName: string,
-  changedLines: Array<{line: string, position: number, lineNumber: number}>,
-  repoInfo: any = null
-): Promise<Array<{position: number, comment: string}>> {
-  try {
-    log("INFO", `Generating code analysis for ${fileName}`);
-
-    const codeContext = changedLines
-      .map(cl => `Line ${cl.lineNumber}: ${cl.line}`)
-      .join('\n');
-
-    const systemPrompt = `You are a GitHub bot that reviews code changes against contributing guidelines. Analyze the provided code changes and identify specific lines that violate the contributing guidelines.
-
-For each violation, provide:
-- The exact position in the diff where the violation occurs
-- A brief, actionable comment (1-2 sentences max)
-
-Only comment on clear, specific violations. Do not comment on:
-- Minor style issues
-- Subjective preferences
-- Code that mostly follows guidelines
-
-Response format (JSON array):
-[
-  {
-    "position": number,
-    "comment": "Brief explanation of the violation and how to fix it"
-  }
-]
-
-If no violations are found, return an empty array: []`;
-
-    const messages: Anthropic.Messages.MessageParam[] = [
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: `Contributing guidelines:\n${contributingContent}`,
-            cache_control: { type: "ephemeral" },
-          },
-          {
-            type: "text",
-            text: `File: ${fileName}
-            
-Code changes:
-${codeContext}`,
-          },
-        ],
-      },
-      {
-        role: "assistant",
-        content: "[",
-      },
-    ];
-
-    const response = await anthropic.messages.create({
-      model: config.aiModel,
-      max_tokens: config.maxTokens,
-      system: systemPrompt,
-      messages: messages,
-    });
-
-    const aiResponse =
-      response.content[0].type === "text" ? response.content[0].text : "";
-
-    try {
-      const result = JSON.parse(`[${aiResponse}`);
-      return Array.isArray(result) ? result : [];
-    } catch (parseError) {
-      log("ERROR", "Failed to parse AI response for code analysis", { aiResponse });
-      return [];
-    }
-  } catch (error: any) {
-    log("ERROR", `Error generating code analysis for ${fileName}`, {
-      error: error.message,
-      repoInfo,
-    });
-    return [];
-  }
-}
 
 // Handle pull request opened events
 async function handlePullRequestOpened({ octokit, payload }: any) {
@@ -484,7 +347,13 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
       log("INFO", `Generic welcome comment posted for PR`, repoInfo);
     }
 
-    await handlePullRequestCodeReview({ octokit, payload });
+    await handlePullRequestCodeReview({ 
+      octokit, 
+      payload, 
+      loadContributingGuidelines, 
+      anthropic, 
+      config 
+    });
   } catch (error: any) {
     log("ERROR", `Error handling pull request opened event`, {
       error: error.message,
@@ -683,95 +552,6 @@ async function handleIssueCommentCreated({ octokit, payload }: any) {
   }
 }
 
-// Handle pull request code review - analyze specific code changes
-export async function handlePullRequestCodeReview({ octokit, payload }: any) {
-  const owner = payload.repository.owner.login;
-  const repo = payload.repository.name;
-  const prNumber = payload.pull_request.number;
-  const repoInfo = { owner, repo, prNumber };
-
-  log("INFO", `Analyzing PR code for review`, {
-    url: payload.pull_request.html_url,
-    author: payload.pull_request.user.login,
-    ...repoInfo,
-  });
-
-  // Skip if pull request is from a bot
-  if (payload.pull_request.user.type === "Bot") {
-    log("INFO", "Skipping bot pull request code review", repoInfo);
-    return;
-  }
-
-  // Skip if pull request is a draft
-  if (payload.pull_request.draft) {
-    log("INFO", `Skipping draft PR code review`, repoInfo);
-    return;
-  }
-
-  try {
-    // Load contributing guidelines
-    const contributingContent = await loadContributingGuidelines(
-      octokit,
-      owner,
-      repo
-    );
-
-    if (!contributingContent) {
-      log("INFO", "No contributing guidelines found, skipping code review", repoInfo);
-      return;
-    }
-
-    const prFiles = await fetchPRFiles(octokit, owner, repo, prNumber);
-    const reviewComments: Array<{path: string, position: number, body: string}> = [];
-
-    for (const file of prFiles) {
-      if (!file.patch) continue;
-      
-      const changedLines = parseDiffForChangedLines(file.patch);
-      if (changedLines.length === 0) continue;
-
-      const codeAnalysis = await generateCodeAnalysisResponse(
-        contributingContent,
-        file.filename,
-        changedLines,
-        repoInfo
-      );
-
-      for (const analysis of codeAnalysis) {
-        if (analysis.position !== undefined && analysis.comment) {
-          reviewComments.push({
-            path: file.filename,
-            position: analysis.position,
-            body: analysis.comment
-          });
-        }
-      }
-    }
-
-    if (reviewComments.length > 0) {
-      await octokit.request(
-        "POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews",
-        {
-          owner,
-          repo,
-          pull_number: prNumber,
-          event: "COMMENT",
-          comments: reviewComments,
-        }
-      );
-
-      log("INFO", `Posted code review with ${reviewComments.length} line-specific comments`, repoInfo);
-    } else {
-      log("INFO", "No code violations found, skipping review", repoInfo);
-    }
-  } catch (error: any) {
-    log("ERROR", `Error handling PR code review`, {
-      error: error.message,
-      stack: error.stack,
-      ...repoInfo,
-    });
-  }
-}
 
 // Register event listeners
 app.webhooks.on("pull_request.opened", handlePullRequestOpened);
