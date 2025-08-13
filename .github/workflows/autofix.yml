@@ -30,5 +30,11 @@ jobs:
       - name: Typecheck
         run: npm run build
         shell: bash
+        env:
+          GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
+          GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          GH_APP_ID: ${{ secrets.GH_APP_ID }}
+          GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
+          GH_WEBHOOK_SECRET: ${{ secrets.GH_WEBHOOK_SECRET }}
 
       - uses: autofix-ci/action@ff86a557419858bb967097bfc916833f5647fa8c
