@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { App } from "octokit";
 import Anthropic from "@anthropic-ai/sdk";
 import { parseAIResponse } from "../../../utils/jsonParser";
+import { 
+  fetchPRFiles, 
+  parseDiffForChangedLines, 
+  generateCodeAnalysisResponse, 
+  handlePullRequestCodeReview 
+} from "../../../utils/prCodeReview";
 
 // Configuration
 const config = {
@@ -93,6 +99,7 @@ async function fetchCommentThread(
     return "Unable to fetch previous comments.";
   }
 }
+
 
 // Helper function to load contributing.md from repository with caching
 async function loadContributingGuidelines(
@@ -248,6 +255,7 @@ ${submissionContent}`,
   }
 }
 
+
 // Handle pull request opened events
 async function handlePullRequestOpened({ octokit, payload }: any) {
   const owner = payload.repository.owner.login;
@@ -338,6 +346,14 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
 
       log("INFO", `Generic welcome comment posted for PR`, repoInfo);
     }
+
+    await handlePullRequestCodeReview({ 
+      octokit, 
+      payload, 
+      loadContributingGuidelines, 
+      anthropic, 
+      config 
+    });
   } catch (error: any) {
     log("ERROR", `Error handling pull request opened event`, {
       error: error.message,
@@ -535,6 +551,7 @@ async function handleIssueCommentCreated({ octokit, payload }: any) {
     });
   }
 }
+
 
 // Register event listeners
 app.webhooks.on("pull_request.opened", handlePullRequestOpened);
