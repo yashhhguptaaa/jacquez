@@ -1,6 +1,6 @@
 # Jacquez
 
-A friendly moderator for OSS repos
+A friendly moderator for OSS repos that can run as a **GitHub App** (webhook) or **GitHub Action** (CI check).
 
 ## Prerequisites
 
@@ -58,6 +58,7 @@ npm start
 ```
 
 The server will start on port 3000 and display:
+
 ```
 GitHub App server is running on port 3000
 Webhook URL: http://localhost:3000/webhook
@@ -70,6 +71,32 @@ For production deployment, ensure environment variables are set and run:
 ```bash
 NODE_ENV=production npm start
 ```
+
+## Usage Options
+
+Jacquez can be used in two ways:
+
+### Option 1: GitHub Action (Recommended)
+
+Run Jacquez as a CI check that **fails the build** for guideline violations:
+
+- ✅ More visible (red ❌ in PR status)
+- ✅ No GitHub notifications spam
+- ✅ Native CI/CD integration
+
+**Quick setup**: Copy `.github/workflows/jacquez-pr-check.yml` to your repository and add your `ANTHROPIC_API_KEY` secret.
+
+📖 **[Full GitHub Action Documentation](docs/GITHUB_ACTION.md)**
+
+### Option 2: GitHub App (Traditional)
+
+Run Jacquez as a webhook server that **posts comments** on issues and PRs:
+
+- 💬 Interactive comment-based feedback
+- 🔄 Real-time responses
+- 🤖 Works on issues and comments too
+
+Continue reading below for GitHub App setup instructions.
 
 ## Testing
 
@@ -84,7 +111,6 @@ NODE_ENV=production npm start
    - Opening an issue in a repository where your app is installed
    - Opening a pull request
    - Commenting on an issue
-
 
 ## License
 
