@@ -1,6 +1,6 @@
 # Jacquez
 
-A friendly moderator for OSS repos that can run as a **GitHub App** (webhook) or **GitHub Action** (CI check).
+A friendly moderator for OSS repos that posts helpful comments and can optionally trigger CI validation.
 
 ## Prerequisites
 
@@ -72,31 +72,24 @@ For production deployment, ensure environment variables are set and run:
 NODE_ENV=production npm start
 ```
 
-## Usage Options
+## How It Works
 
-Jacquez can be used in two ways:
+Jacquez operates as a **GitHub App** that:
 
-### Option 1: GitHub Action (Recommended)
+1. **Posts helpful comments** on issues and PRs when guidelines are violated
+2. **Optionally triggers CI validation** to fail builds for stricter enforcement
 
-Run Jacquez as a CI check that **fails the build** for guideline violations:
+### Features
 
-- ✅ More visible (red ❌ in PR status)
-- ✅ No GitHub notifications spam
-- ✅ Native CI/CD integration
+- 💬 **Comment-based guidance** - Helps contributors understand requirements
+- ❌ **Optional CI enforcement** - Can fail builds to prevent merging violations
+- 🤖 **Handles multiple events** - Works on issues, PRs, and comments
+- 📖 **Guideline integration** - Uses your repository's CONTRIBUTING.md file
 
-**Quick setup**: Copy `.github/workflows/jacquez-pr-check.yml` to your repository and add your `ANTHROPIC_API_KEY` secret.
+### Setup Options
 
-📖 **[Full GitHub Action Documentation](docs/GITHUB_ACTION.md)**
-
-### Option 2: GitHub App (Traditional)
-
-Run Jacquez as a webhook server that **posts comments** on issues and PRs:
-
-- 💬 Interactive comment-based feedback
-- 🔄 Real-time responses
-- 🤖 Works on issues and comments too
-
-Continue reading below for GitHub App setup instructions.
+- **Basic setup**: Install the GitHub App for comment-based guidance
+- **Enhanced enforcement**: Add the validation workflow to trigger CI checks
 
 ## Testing
 
