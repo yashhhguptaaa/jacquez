@@ -645,10 +645,10 @@ async function handleIssueCommentCreated({ octokit, payload }: any) {
 
 // Register event listeners
 app.webhooks.on("pull_request.opened", handlePullRequestOpened);
-app.webhooks.on("pull_request.edited", handlePullRequestOpened);
+// app.webhooks.on("pull_request.edited", handlePullRequestOpened);
 app.webhooks.on("pull_request.synchronize", handlePullRequestOpened);
 app.webhooks.on("issues.opened", handleIssueOpened);
-app.webhooks.on("issue_comment.created", handleIssueCommentCreated);
+// app.webhooks.on("issue_comment.created", handleIssueCommentCreated);
 
 export async function POST(request: NextRequest) {
   try {
