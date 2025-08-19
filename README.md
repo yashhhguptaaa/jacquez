@@ -9,25 +9,63 @@ A friendly moderator for OSS repos that posts helpful comments and can optionall
 - Anthropic API key
 - Smee.io channel (for local development)
 
-## Setup
+## For Repository Owners
 
-### 1. Clone and Install
+**Want to use Jacquez on your repositories?**
+
+### Quick Setup
+
+#### Step 1: Install the GitHub App
+
+1. Go to: https://github.com/apps/jacquez-bott
+2. Click **"Install"**
+3. Choose which repositories you want Jacquez to help with
+4. Grant permissions (read files, write comments, create status checks)
+
+#### Step 2: Add Contributing Guidelines
+
+Create a `CONTRIBUTING.md` file in your repository root with your rules:
+
+```markdown
+# Contributing Guidelines
+
+## Pull Request Requirements
+
+- [ ] Include screenshots for UI changes
+- [ ] Add tests for new functionality
+- [ ] Update documentation if needed
+- [ ] Write clear commit messages
+
+## Issue Requirements
+
+- [ ] Clear description of the problem
+- [ ] Steps to reproduce (for bugs)
+- [ ] Expected vs actual behavior
+```
+
+#### Step 3: Test It
+
+1. Open a test pull request
+2. Watch for:
+   - 💬 Helpful comments if guidelines aren't followed
+   - ✅/❌ Status check called "Jacquez Guidelines Check"
+
+**That's it! Jacquez will now automatically review PRs and issues against your guidelines.** 🎉
+
+## For Developers
+
+**Want to deploy your own instance of Jacquez?**
+
+**Development:**
 
 ```bash
 git clone https://github.com/antiwork/jacquez.git
 cd jacquez
 npm install
-```
-
-### 2. Configure Environment Variables
-
-Copy the example environment file:
-
-```bash
 cp .env.example .env
+# Edit .env with your credentials (see setup guide)
+npm run dev
 ```
-
-Edit `.env` with your credentials.
 
 ### 3. GitHub App Setup
 
