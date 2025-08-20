@@ -332,19 +332,6 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
           { ...repoInfo, reasoning: response.reasoning }
         );
       }
-    } else {
-      // No contributing guidelines found, send generic welcome
-      await octokit.request(
-        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
-        {
-          owner: owner,
-          repo: repo,
-          issue_number: prNumber,
-          body: "Hello! Thanks for opening this pull request. 🤖",
-        }
-      );
-
-      log("INFO", `Generic welcome comment posted for PR`, repoInfo);
     }
 
     await handlePullRequestCodeReview({ 
@@ -434,19 +421,6 @@ async function handleIssueOpened({ octokit, payload }: any) {
           { ...repoInfo, reasoning: response.reasoning }
         );
       }
-    } else {
-      // No contributing guidelines found, send generic welcome
-      await octokit.request(
-        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
-        {
-          owner: owner,
-          repo: repo,
-          issue_number: issueNumber,
-          body: "Hello! Thanks for opening this issue. We'll take a look at it soon. 🤖",
-        }
-      );
-
-      log("INFO", `Generic welcome comment posted for issue`, repoInfo);
     }
   } catch (error: any) {
     log("ERROR", `Error handling issue opened event`, {
