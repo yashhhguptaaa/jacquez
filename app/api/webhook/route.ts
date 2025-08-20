@@ -325,6 +325,29 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
         );
 
         log("INFO", `Comment posted successfully for PR`, { ...repoInfo, reasoning: response.reasoning });
+        
+        try {
+          await octokit.request(
+            "POST /repos/{owner}/{repo}/issues/{issue_number}/assignees",
+            {
+              owner: owner,
+              repo: repo,
+              issue_number: prNumber,
+              assignees: [payload.pull_request.user.login],
+            }
+          );
+          
+          log("INFO", `PR assigned back to creator for addressing violations`, { 
+            ...repoInfo, 
+            assignee: payload.pull_request.user.login 
+          });
+        } catch (assignmentError: any) {
+          log("ERROR", `Failed to assign PR back to creator`, {
+            error: assignmentError.message,
+            assignee: payload.pull_request.user.login,
+            ...repoInfo,
+          });
+        }
       } else {
         log(
           "INFO",
