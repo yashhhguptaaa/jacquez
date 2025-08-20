@@ -392,25 +392,35 @@ async function handlePullRequestOpened({ octokit, payload }: any) {
           ...repoInfo,
           reasoning: response.reasoning,
         });
+
+        try {
+          await octokit.request(
+            "POST /repos/{owner}/{repo}/issues/{issue_number}/assignees",
+            {
+              owner: owner,
+              repo: repo,
+              issue_number: prNumber,
+              assignees: [payload.pull_request.user.login],
+            }
+          );
+
+          log("INFO", `PR assigned back to creator for addressing violations`, {
+            ...repoInfo,
+            assignee: payload.pull_request.user.login,
+          });
+        } catch (assignmentError: any) {
+          log("ERROR", `Failed to assign PR back to creator`, {
+            error: assignmentError.message,
+            assignee: payload.pull_request.user.login,
+            ...repoInfo,
+          });
+        }
       } else {
         log("INFO", `No clear violations found, skipping comment for PR`, {
           ...repoInfo,
           reasoning: response.reasoning,
         });
       }
-    } else {
-      // No contributing guidelines found, send generic welcome
-      await octokit.request(
-        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
-        {
-          owner: owner,
-          repo: repo,
-          issue_number: prNumber,
-          body: "Hello! Thanks for opening this pull request. 🤖",
-        }
-      );
-
-      log("INFO", `Generic welcome comment posted for PR`, repoInfo);
     }
 
     await handlePullRequestCodeReview({
@@ -515,19 +525,6 @@ async function handleIssueOpened({ octokit, payload }: any) {
           reasoning: response.reasoning,
         });
       }
-    } else {
-      // No contributing guidelines found, send generic welcome
-      await octokit.request(
-        "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
-        {
-          owner: owner,
-          repo: repo,
-          issue_number: issueNumber,
-          body: "Hello! Thanks for opening this issue. We'll take a look at it soon. 🤖",
-        }
-      );
-
-      log("INFO", `Generic welcome comment posted for issue`, repoInfo);
     }
   } catch (error: any) {
     log("ERROR", `Error handling issue opened event`, {
@@ -645,10 +642,10 @@ async function handleIssueCommentCreated({ octokit, payload }: any) {
 
 // Register event listeners
 app.webhooks.on("pull_request.opened", handlePullRequestOpened);
-// app.webhooks.on("pull_request.edited", handlePullRequestOpened);
-app.webhooks.on("pull_request.synchronize", handlePullRequestOpened);
-app.webhooks.on("issues.opened", handleIssueOpened);
+// app.webhooks.on("issues.opened", handleIssueOpened);
 // app.webhooks.on("issue_comment.created", handleIssueCommentCreated);
+app.webhooks.on("pull_request.synchronize", handlePullRequestOpened);
+app.webhooks.on("pull_request.edited", handlePullRequestOpened);
 
 export async function POST(request: NextRequest) {
   try {
